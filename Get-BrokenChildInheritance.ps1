@@ -58,7 +58,7 @@ Write-Verbose "Recursing through all child directories..."
 
 # Use Get-ChildItem to recurse through the directories under the selected root path and pass the 'directory' attribute through the pipeline
 # to the select statement/hash tables and then export the data to .csv
-get-childitem -attributes directory -recurse $rootpath | Select-Object $fullpath,$inheritance,$permission |
+get-childitem -attributes directory -recurse $rootpath | Select-Object $fullpath,$inheritance,lastwritetime,$permission |
 Where-Object 'Broken Inheritance' -eq "TRUE" | Export-Csv $ExportFile -Append -NoTypeInformation -Force
 
 Write-Verbose "Opening File..."
