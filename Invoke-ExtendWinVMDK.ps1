@@ -29,7 +29,7 @@ the output to the shell for the user to review.
 
 #>
 
-#requires -PSSnapIn VMware.VimAutomation.Core
+#requres -PSSnapIn VMware.VimAutomation.Core
 
 [cmdletbinding()]
 param()
@@ -37,7 +37,9 @@ param()
 function WindowsPartitions {
 [cmdletbinding()]
 param
-([parameter(mandatory=$true)][string]$Server
+(
+[parameter(mandatory=$true)]
+[string]$Server
 )
 
 #Define Hash Table Variables
@@ -67,23 +69,28 @@ else
 
 	$VMName = Read-Host -Prompt "Enter the name of the VM"
 	$GuestDNSName = (get-vm $VMName).guest.get_hostname()
+	
 	Get-HardDisk -VM $VMName | Select-Object Name,CapacityGB,Filename | Format-Table -AutoSize
 	
 	$HardDiskNumber = Read-Host -Prompt "Enter the number of the Hard Disk you wish to extend (ex: 1)"
+	
 	$CheckPartition = Read-Host -Prompt "Would you like to check and display the current partition configuration? (Y/N)
 	(Windows ONLY - requires admin access) "
+	
 	if($CheckPartition -eq 'Y'){WindowsPartitions -Server $GuestDNSName}else{}
-	$NewSizeGB = Read-Host -Prompt "Enter the new total size in GB (must be larger than current size)"
+	
+	[int]$NewSizeGB = Read-Host -Prompt "Enter the new total size in GB (must be larger than current size)"
+	
 	$GuestVolumeLetter = Read-Host -Prompt "Enter the guest volume letter that will be expanded (ex: C)"	
 
 	Get-HardDisk -VM $VMName | Where-Object Name -eq "Hard Disk $HardDiskNumber" | Set-HardDisk -CapacityGB $NewSizeGB
 	
 	$GuestOSName = (Get-VM $VMName).guest.OSFullName
 	
-	
 	if ($GuestOSName -like '*Server 2008*')
 	{
 		Write-Warning "Looks like the guest is running an OS that supports remote expansion."
+		
 		$Continue = Read-Host -Prompt "Ready to extend guest partition. Continue? (Y/N)"
 		
 		if($Continue -eq 'Y')	
@@ -92,23 +99,25 @@ else
 			$scriptstring = $script
 		
 			Write-Warning "Enter guest OS credentials..."
+			
 			Start-Sleep -Seconds 2
 			
 			$cred = Get-Credential
+			
 			Invoke-VMScript -VM $VMName -ScriptText $scriptstring -GuestCredential $cred -ScriptType bat
 			
 			}# end if
 	
 		else
 		{
-			Write-Warning "The guest OS is either not Windows or has not been tested to support remote expansion using diskpart.exe"	
+			Write-Warning "Guest OS expansion cancelled. At this point, the vmdk was extended but the guest may require manaul work to see the new space "	
 			}# end else
 		
 		}# end if
 	
 	else
 		{
-		Write-Warning "Guest OS expansion cancelled. At this point, the vmdk was extended but the guest will not see the new space until "
+		Write-Warning "The guest OS is either not Windows or has not been tested to support remote expansion using diskpart.exe"
 			}# end else
 	
 Write-Warning "Script Complete. Verify VM expansion was completed successfully"
