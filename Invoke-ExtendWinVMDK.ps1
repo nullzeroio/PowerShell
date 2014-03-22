@@ -29,6 +29,8 @@ the output to the shell for the user to review.
 
 #>
 
+#requires -PSSnapIn VMware.VimAutomation.Core
+
 [cmdletbinding()]
 param()
 
