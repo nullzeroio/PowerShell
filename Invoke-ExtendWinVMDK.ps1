@@ -8,8 +8,16 @@
 
 <#
 .SYNOPSIS
-
+This script provides a step-by-step process to extend a windows guest VMDK. 
 .DESCRIPTION
+This script provides a step-by-step process to extend a windows guest VMDK. 
+
+It's based on the VMware.VIM.Automation.Core PS Snap-In, which is included/part of PowerCLI.
+The script will first walk you through increasing the size of a .VMDK. Once that is complete, if the guest
+is running a Windows OS, it will ask if you would like to extend a possible associated partition, within
+the OS; if you accept, it uses the 'echo' command to output readable DISKPART commands into a file on the
+root of C:\, on the VM. After the file is created, DISKPART runs the commands in the .txt file and returns
+the output to the shell for the user to review.
 
 .PARAMETER <>
 
