@@ -51,7 +51,7 @@ BEGIN
 {
 	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop		# Set EA preference to 'Stop' in order to force all errors to be terminating for error handling
 
-	$Properties = @(# Define which properties will be pulled from the computer objects and store them in an array
+	$Properties = @(		# Define which properties will be pulled from the computer objects and store them in an array
 	'Name',
 	'DNSHostName',
 	'Location',
