@@ -1,6 +1,6 @@
 ﻿<#
 	.SYNOPSIS
-		Get all AD computers running a supplied operating system in the specified domain. 
+		Get all AD computers running a supplied operating system in the specified domain.
 	.DESCRIPTION
 		Get all AD computers running a supplied operating system in the specified domain.
 
@@ -38,7 +38,7 @@ param (
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true)]
 	[string[]]$Domain = $env:USERDOMAIN,
-	
+
 	[parameter(Mandatory = $false,
 			   HelpMessage = "Enter OS name or wildcard ",
 			   Position = 1,
@@ -50,7 +50,7 @@ param (
 BEGIN
 {
 	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop		# Set EA preference to 'Stop' in order to force all errors to be terminating for error handling
-																											
+
 	$Properties = @(# Define which properties will be pulled from the computer objects and store them in an array
 	'Name',
 	'DNSHostName',
@@ -65,7 +65,7 @@ BEGIN
 	'Created',
 	'PasswordLastSet',
 	'CanonicalName')
-	
+
 }# end BEGIN
 
 PROCESS
@@ -75,17 +75,17 @@ PROCESS
 		try		# try/catch block - provide basic error handling as it connects to each domain
 		{
 			Write-Verbose -Message "Working on $d"
-			
+
 			Get-AdComputer -Server $D -LDAPFilter "(OperatingSystem=*$OperatingSystem*)" -Properties $Properties | Select-Object $Properties
-			
+
 		} catch
 		{
 			Write-Warning -Message "$D - $_"
-			
+
 		}# end try/catch
-		
+
 	}# end foreach
-	
+
 }# end PROCESS
 
 
