@@ -3,6 +3,8 @@
     Basic script to show current licensing status
 .DESCRIPTION
     Basic script to show current licensing status.
+
+	You must be connected to a VI server prior to running this script
 .NOTES
 
     20140904    K. Kirkpatrick      Re-factored script for Github repo
