@@ -6,8 +6,7 @@
 
 	You must be connected to a VI server prior to running this script
 .NOTES
-
-    20140904    K. Kirkpatrick      Re-factored script for Github repo
+	20140904    K. Kirkpatrick      Re-factored script for Github repo
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
@@ -33,6 +32,9 @@ PROCESS
 	
 	try
 	{
+		# Using Write-Warning instead of Write-Verbose so that Get-View verbose messages are suppressed
+		Write-Warning -Message "Gathering license detail from $($global:defaultviserver)"
+		
 		$vSphereLicInfo = @()
 		$ServiceInstance = Get-View ServiceInstance
 		Foreach ($LicenseMan in Get-View ($ServiceInstance | Select-Object -First 1).Content.LicenseManager)
