@@ -36,7 +36,7 @@
 		Selected.System.Management.Automation.PSCustomObject
 	.NOTES
 		Created:	20140908		K. Kirkpatrick
-		
+
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
  warranty or support. It's always considered a best practice
@@ -58,15 +58,15 @@ param (
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true,
 			   ParameterSetName = "Default")]
-	[alias("comp", "cname")]
+	[alias("comp", "cn")]
 	[string[]]$ComputerName = "localhost",
-	
+
 	[parameter(Mandatory = $true,
 			   Position = 1,
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true,
 			   ParameterSetName = "Default")]
-	[alias("svc", "service", "svcname")]
+	[alias("svc", "service")]
 	[string]$ServiceName
 )
 
@@ -76,11 +76,11 @@ foreach ($C in $ComputerName)
 {
 	# Create counter variable and increment by 1 for each item in the collection
 	$i++
-	
+
 	# Call out variables and set/reset values
 	$ServiceQuery = $null
-	$ObjCollection = @()
-	
+	$objCollection = @()
+
 	# If connectivity to remote system is successful, continue
 	if (Test-Connection $C -Count 2 -Quiet)
 	{
@@ -88,67 +88,67 @@ foreach ($C in $ComputerName)
 		try
 		{
 			Write-Verbose -Message "Running Service Check on $C..."
-						
+
 			$ServiceQuery = Get-Service -Name $ServiceName -ComputerName $C -ErrorAction 'SilentlyContinue'
-			
+
 			# Create obj for reachable systems
-			$SNMPObj = New-Object -TypeName PSObject -Property @{
+			$objSvc = New-Object -TypeName PSObject -Property @{
 				SystemName = [string]$C
 				ServiceName = $ServiceQuery.Name
 				Status = $ServiceQuery.Status
 				DisplayName = $ServiceQuery.DisplayName
 				Error = if ($ServiceQuery.Name -eq $null) { "The service '$ServiceName' does not appear to exist" }
-			}# end $SNMPObj
-			
+			}# $objSvc
+
 			# Add the results to the $ObjCollection array
-			$ObjCollection += $SNMPObj
-			
+			$ObjCollection += $objSvc
+
 			# Add the contents of the $ObjCollection array to the $Results variable. This may seem redundant
 			# but we are clearing the the $ObjCollection variable on each interation through foreach, in order
 			# to maintain data integrety. The $Results variable is storing the summation of all interations
 			$Results += $ObjCollection
-			
-			
+
+
 		} catch
 		{
 			Write-Warning -Message "$C - $_"
-			
+
 			# Create obj for systems that are reachable but incur an error
-			$WarnObj = New-Object -TypeName PSObject -Property @{
+			$objWarn = New-Object -TypeName PSObject -Property @{
 				SystemName = [string]$C
 				Error = $_
-			}# end $WarnObj
-			
+			}# $objWarn
+
 			# See the comment in the first 'try' block for detail on $ObjCollection & $Results variables
-			$ObjCollection += $WarnObj
+			$ObjCollection += $objWarn
 			$Results += $ObjCollection
-			
-		}# end try/catch
-		
-	}# end if
-	
+
+		}# try/catch
+
+	}# if
+
 	else
 	{
 		Write-Warning -Message "$C is unreachable"
-		
+
 		# Create obj for systems that are not reachable
-		$DownObj = New-Object -TypeName PSObject -Property @{
+		$objDown = New-Object -TypeName PSObject -Property @{
 			SystemName = [string]$C
 			Error = "$C is unreachable"
-		}# end $DownObj
-		
+		}# $objDown
+
 		# See the comment in the first 'try' block for detail on $ObjCollection & $Results variables
-		$ObjCollection += $DownObj
+		$ObjCollection += $objDown
 		$Results += $ObjCollection
-		
-	}# end else
-	
+
+	}# else
+
 	# Write total progress to progress bar
 	$TotalServers = $ComputerName.Length
 	$PercentComplete = [int](($i / $TotalServers) * 100)
 	Write-Progress -Activity "Working..." -CurrentOperation "$PercentComplete% Complete" -Status "Percent Complete" -PercentComplete $PercentComplete
-	
-}# end foreach
+
+}# foreach
 
 # Call the results and format the order
 $Results | Select-Object SystemName, ServiceName, Status, DisplayName, Error
