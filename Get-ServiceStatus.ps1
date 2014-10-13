@@ -1,16 +1,15 @@
 ﻿<#
 	.SYNOPSIS
-		Get the status of a given service on a given computer or multiple computers
+		Get the status of a given service on a given computer or multiple computers with enhanced error handling
 	.DESCRIPTION
-		Get the status of a given service on a single or multiple computers.
+		Get the status of a given service on a single or multiple computers via WMI.
 
 		The output will return to the console, with only minimal formatting to order the properties.
 
 		Exporting should be used via available Export-* cmdlets.
 
-		The script was written with some more robust error handling that could be useful in an enterprise environment where execution times
-		may be longer and an admin needs to know exactly what happened, without having to re-run the script.
-	.PARAMETER  ComputerName
+		For large environments, it is highly reccomended to export the out to .CSV (Export-Csv)
+	.PARAMETER ComputerName
 		Short name or FQDN of desired computer/server to query
 	.PARAMETER ServiceName
 		Name of service you wish to query for
@@ -19,9 +18,16 @@
 
 		Check for the SNMP service and it's associated status
 	.EXAMPLE
-		.\Get-ServiceStatus -ComputerName client01.company.com,server01.company.com -ServiceName bits -Verbose
+		.\Get-ServiceStatus -ComputerName server1,server2,badserver -ServiceName bits -Verbose
 
 		Check for the BITS service and it's associated status
+
+SystemName  ServiceName  Status DisplayName                             Error
+----------  -----------  ------ -----------                             -----
+server1 	bits        Stopped Background Intelligent Transfer Service
+server1 	bits        Stopped Background Intelligent Transfer Service
+badserver                                                               badserver is unreachable
+
 	.EXAMPLE
 		.\Get-ServiceStatus -ComputerName (Get-Content C:\ServiceQueryPCList.txt) -ServiceName termservice -Verbose
 
@@ -35,7 +41,8 @@
 	.OUTPUTS
 		Selected.System.Management.Automation.PSCustomObject
 	.NOTES
-		Created:	20140908		K. Kirkpatrick
+		20140908	K. Kirkpatrick		Created
+		20141010	K. Kirkpatrick		Updated PS custom object casting; modified some comment formatting
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
@@ -46,7 +53,6 @@
  If you have questions or issues, please reach out/report them on
  my GitHub page. Thanks for your support!
 [-------------------------------------DISCLAIMER-------------------------------------]
-
 #>
 
 #Requires -Version 3
@@ -74,25 +80,26 @@ $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
 foreach ($C in $ComputerName)
 {
-	# Create counter variable and increment by 1 for each item in the collection
+		# Create counter variable and increment by 1 for each item in the collection
 	$i++
 
-	# Call out variables and set/reset values
+		# Call out variables and set/reset values
 	$ServiceQuery = $null
 	$objCollection = @()
 
-	# If connectivity to remote system is successful, continue
+		# If connectivity to remote system is successful, continue
 	if (Test-Connection $C -Count 2 -Quiet)
 	{
-		# Begin try/catch block
+			# Begin try/catch block
 		try
 		{
 			Write-Verbose -Message "Running Service Check on $C..."
 
 			$ServiceQuery = Get-Service -Name $ServiceName -ComputerName $C -ErrorAction 'SilentlyContinue'
 
-			# Create obj for reachable systems
-			$objSvc = New-Object -TypeName PSObject -Property @{
+				# Create obj for reachable systems
+				# New-Object -TypeName PSObject -Property
+			$objSvc = [PSCustomObject] @{
 				SystemName = [string]$C
 				ServiceName = $ServiceQuery.Name
 				Status = $ServiceQuery.Status
@@ -100,28 +107,28 @@ foreach ($C in $ComputerName)
 				Error = if ($ServiceQuery.Name -eq $null) { "The service '$ServiceName' does not appear to exist" }
 			}# $objSvc
 
-			# Add the results to the $ObjCollection array
-			$ObjCollection += $objSvc
+				# Add the results to the $objCollection array
+			$objCollection += $objSvc
 
-			# Add the contents of the $ObjCollection array to the $Results variable. This may seem redundant
-			# but we are clearing the the $ObjCollection variable on each interation through foreach, in order
-			# to maintain data integrety. The $Results variable is storing the summation of all interations
-			$Results += $ObjCollection
+				# Add the contents of the $objCollection array to the $Results variable. This may seem redundant
+				# but we are clearing the the $objCollection variable on each interation through foreach, in order
+				# to maintain data integrety. The $Results variable is storing the summation of all interations
+			$Results += $objCollection
 
 
 		} catch
 		{
 			Write-Warning -Message "$C - $_"
 
-			# Create obj for systems that are reachable but incur an error
-			$objWarn = New-Object -TypeName PSObject -Property @{
+				# Create obj for systems that are reachable but incur an error
+			$objWarn = [PSCustomObject] @{
 				SystemName = [string]$C
 				Error = $_
 			}# $objWarn
 
-			# See the comment in the first 'try' block for detail on $ObjCollection & $Results variables
-			$ObjCollection += $objWarn
-			$Results += $ObjCollection
+				# See the comment in the first 'try' block for detail on $objCollection & $Results variables
+			$objCollection += $objWarn
+			$Results += $objCollection
 
 		}# try/catch
 
@@ -131,24 +138,24 @@ foreach ($C in $ComputerName)
 	{
 		Write-Warning -Message "$C is unreachable"
 
-		# Create obj for systems that are not reachable
-		$objDown = New-Object -TypeName PSObject -Property @{
+			# Create obj for systems that are not reachable
+		$objDown = [PSCustomObject] @{
 			SystemName = [string]$C
 			Error = "$C is unreachable"
 		}# $objDown
 
-		# See the comment in the first 'try' block for detail on $ObjCollection & $Results variables
-		$ObjCollection += $objDown
-		$Results += $ObjCollection
+			# See the comment in the first 'try' block for detail on $objCollection & $Results variables
+		$objCollection += $objDown
+		$Results += $objCollection
 
 	}# else
 
-	# Write total progress to progress bar
+		# Write total progress to progress bar
 	$TotalServers = $ComputerName.Length
 	$PercentComplete = [int](($i / $TotalServers) * 100)
 	Write-Progress -Activity "Working..." -CurrentOperation "$PercentComplete% Complete" -Status "Percent Complete" -PercentComplete $PercentComplete
 
 }# foreach
 
-# Call the results and format the order
-$Results | Select-Object SystemName, ServiceName, Status, DisplayName, Error
+	# Call the results and format the order
+$Results
