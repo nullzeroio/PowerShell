@@ -42,6 +42,8 @@ Output warning when a server that does not support WSMAN is supplied
 
     TODO: Dynamic fall-back to WMI
 
+	TAG:PUBLIC
+
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
  warranty or support. It's always considered a best practice

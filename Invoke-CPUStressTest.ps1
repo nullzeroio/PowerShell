@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-This script will saturate a specified number of CPU cores to 100% utilization. 
+This script will saturate a specified number of CPU cores to 100% utilization.
 .DESCRIPTION
 This script will saturate a specified number of CPU cores to 100% utilization.
 
@@ -19,8 +19,10 @@ None.
 .EXAMPLE
 .\Invoke-CPUStressTest.ps1 -NumHyperCores 4
 
-This will execute the script against 4 cores. In this case, it may be a 2-core CPU with hyper-threading enabled. 
+This will execute the script against 4 cores. In this case, it may be a 2-core CPU with hyper-threading enabled.
 
+.NOTES
+TAG:PUBLIC
 #>
 
 [cmdletbinding()]
@@ -40,13 +42,13 @@ if ($Prompt -eq 'Y')
 {
 	Write-Warning "To cancel execution of all jobs, close the PowerShell Host Window."
 	Write-Output "Hyper Core Count: $NumHyperCores" >> $Log
-	
+
 foreach ($loopnumber in 1..$NumHyperCores){
     Start-Job -ScriptBlock{
     $result = 1
         foreach ($number in 1..2147483647){
             $result = $result * $number
-        }# end foreach 
+        }# end foreach
     }# end Start-Job
 }# end foreach
 

@@ -4,12 +4,14 @@
 .DESCRIPTION
 	Pre-compile the PowerCLI XML serializers which helps speed up cmdlet execution
 
-	This is a very basic script that simply aggregates the commands mentioned in the 
+	This is a very basic script that simply aggregates the commands mentioned in the
 	referenced PowerCLI blog post about speeding up the first cmdlet when loading PowerCLI
 .EXAMPLE
 	.\Optimize-PowerCLISerializers.ps1 -Verbose
 .NOTES
 	20140914	K. Kirkpatrick		Created
+
+	TAG:PUBLIC
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
@@ -36,7 +38,7 @@ PROCESS
 	try
 	{
 		Write-Verbose -Message "Compiling Serializers..."
-		
+
 		Start-Process -FilePath 'C:\Windows\Microsoft.NET\Framework\v2.0.50727\ngen.exe' -ArgumentList { install "VimService41.XmlSerializers, Version=4.1.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f" }
 		Start-Process -FilePath 'C:\Windows\Microsoft.NET\Framework\v2.0.50727\ngen.exe' -ArgumentList { install "VimService40.XmlSerializers, Version=4.0.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f" }
 		Start-Process -FilePath 'C:\Windows\Microsoft.NET\Framework\v2.0.50727\ngen.exe' -ArgumentList { install "VimService25.XmlSerializers, Version=2.5.0.0, Culture=neutral, PublicKeyToken=10980b081e887e9f" }

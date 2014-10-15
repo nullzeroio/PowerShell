@@ -1,9 +1,9 @@
 ﻿<#
 	.SYNOPSIS
-		Returns information about the Processor via WMI. 
+		Returns information about the Processor via WMI.
 
 	.DESCRIPTION
-		Information about the processor is returned using the Win32_Processor WMI class. 
+		Information about the processor is returned using the Win32_Processor WMI class.
 
 		You can provide a single computer/server name or supply an array/list.
 
@@ -34,11 +34,13 @@
 		Created: 4/16/14
 
 		Disclaimer: This script comes with no implied warranty or guarantee and is to be used at your own risk. It's recommended that you TEST
-		execution of the script against Dev/Test before running against any Production system. 
+		execution of the script against Dev/Test before running against any Production system.
 
 		#========================================================
 
-	.LINK 
+		TAG:PUBLIC
+
+	.LINK
 		https://github.com/vN3rd/PowerShell-Scripts
 
 	.LINK
@@ -69,10 +71,10 @@ foreach ($C in $Computers)
 	{
 		try
 		{
-			
+
 			#region FormattingHashTables
 			#================================
-			
+
 			# Attempt to differentiate if the destination is a VM, or not. In VMware, vProcessors typically return a value of 0 for the L2 Processor Cache.
 			# This was not testing with Hyper-V
 			$Type = @{
@@ -82,7 +84,7 @@ foreach ($C in $Computers)
 					else { "Physical" }
 				}
 			}# end $Type
-			
+
 			# Check to see if HyperThreading is enabled by comparing the number of logical processors with the number of cores
 			$HyperThreading = @{
 				label = 'HyperthreadingEnabled'
@@ -91,7 +93,7 @@ foreach ($C in $Computers)
 					else { "No" }
 				}
 			}# end $HyperThreading
-			
+
 			# Use hash tables to modify the paramter output names
 			$ComputerName = @{ label = 'Computer'; Expression = { $_.PSComputerName } }
 			$CoreCount = @{ label = 'CoreCount'; Expression = { $_.NumberOfCores } }
@@ -100,26 +102,26 @@ foreach ($C in $Computers)
 			$Socket = @{ label = 'Socket'; expression = { $_.SocketDesignation } }
 			#================================
 			#endregion
-			
+
 			# Run the query
 			Get-WmiObject -Query "SELECT * FROM win32_processor" -ComputerName $C |
 			Select-Object $ComputerName, $Socket, $CoreCount, $LogicalCores, $HyperThreading, $Description, $Type
-			
+
 		}# end try
-		
+
 		catch
 		{
 			# Catch any errors and write a warning that includes the computer name as well as the error message, which is stored in $_
 			Write-Warning "$C - $_"
 		}# end catch
-		
+
 	}# end if
-	
+
 	else
 	{
 		# If the computer was not reachable on the network, display such detail
 		Write-Warning "$C is unreachable"
-		
+
 	}# end else
-	
+
 }# end foreach

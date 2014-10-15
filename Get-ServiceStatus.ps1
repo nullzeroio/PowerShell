@@ -44,6 +44,8 @@ badserver                                                               badserve
 		20140908	K. Kirkpatrick		Created
 		20141010	K. Kirkpatrick		Updated PS custom object casting; modified some comment formatting
 
+		TAG:PUBLIC
+
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
  warranty or support. It's always considered a best practice

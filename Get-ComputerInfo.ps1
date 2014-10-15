@@ -26,6 +26,7 @@
         20141010	K. Kirkpatrick		[+] Updated the way the custom object is created - [PSCustomObject]
         20141013    K. Kirkpatrick      [+] Added uptime property; cleaned up some commented out code
 
+        TAG:PUBLIC
     .LINK
         about_WMI
 

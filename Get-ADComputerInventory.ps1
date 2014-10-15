@@ -25,6 +25,8 @@
 		Selected.Microsoft.ActiveDirectory.Management.ADComputer
 	.NOTES
 		20140904	K. Kirkpatrick	Updated
+
+		TAG:PUBLIC
 #>
 
 #Requires -Version 3

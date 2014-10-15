@@ -2,7 +2,7 @@
 # Created with: SAPIEN Technologies, Inc., PowerShell Studio 2012 v3.1.29
 # Created on:   2/2/2014 11:06 AM
 # Created by:   Steven Slocum & Kevin Kirkpatrick
-# Organization: 
+# Organization:
 # Filename:     Get-BrokenChildInheritance.ps1
 #========================================================================
 
@@ -13,19 +13,23 @@
 .DESCRIPTION
 Recurse through a directory structure and for the directories where inheritance is broken and get the ACL details.
 
-This script will produce inaccurate results if you do not have access to all directories and sub directories. 
+This script will produce inaccurate results if you do not have access to all directories and sub directories.
 
 Running SubInAcl may be required.
 
 .PARAMETER <RootPath>
 
 .INPUTS
- None. This script does not accept pipeline input. 
+ None. This script does not accept pipeline input.
 
 .EXAMPLE
 ./Get-BrokenChildInheritance.ps1 -RootPath 'C:\Test Source' -Verbose
 
 This will recurse through the sub directories within the C:\Test Source directory. Use the -Verbose switch to output details about what the script is currently doing.
+
+.NOTES
+
+TAG:PUBLIC
 #>
 
 [cmdletbinding()]
