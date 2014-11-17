@@ -68,18 +68,18 @@ PROCESS
 				Where-Object { $_.drivetype -eq '3' } |
 				Select-Object SystemName, Caption, VolumeName, $SizeInGB, $FreespaceInGB, $PercentFree
 
-				foreach ($drive in $diskQuery)
+				foreach ($item in $diskQuery)
 				{
 					$colDiskInfo = @()
 					$objDiskInfo = @()
 
 					$objDiskInfo = [PSCustomObject] @{
-						SystemName = $drive.SystemName
-						DriveLetter = $drive.Caption
-						VolumeName = $drive.VolumeName
-						SizeGB = $drive.SizeGB
-						FreeSpaceGB = $drive.FreeSpaceGB
-						PercentFree = $drive.PercentFree
+						SystemName = $item.SystemName
+						DriveLetter = $item.Caption
+						VolumeName = $item.VolumeName
+						SizeGB = $item.SizeGB
+						FreeSpaceGB = $item.FreeSpaceGB
+						PercentFree = $item.PercentFree
 					}# $objDiskInfo
 
 					$colDiskInfo += $objDiskInfo
