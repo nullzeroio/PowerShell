@@ -9,7 +9,7 @@
 	The default counter set is 'Summary' and the default Computer is localhost.
 
 	Optionally, you can supply a number of minutes you want to collect counters using the -RunTimeInMinutes parameter, which will collect
-	the counters every 30 seconds, until the number of minutes that you provide expires. A .CSV file is generated and the data is appended
+	the counters every 30 seconds, until the number of minutes that you provide expires. A .CSV file is generated and the data is appended 
 	to it on each 30 second iteration.
 .PARAMETER ComputerName
 	Name of remote system (FQDN preferred)
@@ -29,7 +29,6 @@
 .NOTES
 	20140925	K. Kirkpatrick		Created
 
-	TAG:PUBLIC
 
 	GitHub:	 https://github.com/vN3rd
 	Twitter:  @vN3rd
@@ -44,7 +43,7 @@
  If you have questions or issues, please reach out/report them on
  my GitHub page. Thanks for your support!
 [-------------------------------------DISCLAIMER-------------------------------------]
-
+	
 #>
 
 [cmdletbinding(PositionalBinding = $true)]
@@ -52,13 +51,13 @@ param (
 	[parameter(Mandatory = $false, Position = 0)]
 	[validatescript({ Test-Connection -ComputerName $_ -Count 2 -Quiet })]
 	[string]$ComputerName = "$(hostname)",
-
+	
 	[parameter(Mandatory = $false, ParameterSetName = "Collection")]
 	[int]$RunTimeInMinutes,
-
+	
 	[parameter(Mandatory = $false, ParameterSetName = "Collection")]
 	[string]$ReportPath = 'C:\DiskIOStats.csv',
-
+	
 	[parameter(Mandatory = $false)]
 	[ValidateSet("Memory", "Processor", "LogicalDisk", "PhysicalDisk", "Network", "Processes", "Summary")]
 	[string]$Counters = "Summary"
@@ -68,23 +67,23 @@ param (
 BEGIN
 {
 	#Requires -Version 3
-
+	
 	Set-StrictMode -Version Latest
 		# Setup preferences and variables
 	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-
+	
 	$windowTitle = $host.ui.RawUI.WindowTitle
-
+	
 	$TimeStart = Get-Date
-
+	
 	$TimeEnd = $timeStart.addminutes($RunTimeInMinutes)
-
+	
 	Function logstamp
-	{		# function to capture the current time in a custom format
+	{		# function to capture the current time in a custom format	
 		$now = Get-Date -Format T
 		Write-Output $now
 	}# function logstamp
-
+	
 	function Get-CounterStats
 	{
 		[cmdletbinding()]
@@ -94,7 +93,7 @@ BEGIN
 			[parameter()]
 			[string[]]$PerfCounters
 		)
-
+		
 		BEGIN
 		{
 				# Function that queries counters, based on what is supplied to the function
@@ -104,7 +103,7 @@ BEGIN
 				return
 			}
 		}
-
+		
 		PROCESS
 		{
 			try
@@ -118,38 +117,38 @@ BEGIN
 				{
 						# clear the $col array on each cycle through the loop
 					$col = @()
-
+					
 						# define custom object and properties
-					$ioObj = New-Object -TypeName psobject -Property @{
+					$ioObj = [PSCustomObject] @{
 						TimeStamp = "$(logstamp)"
 						Counter = $sample.path
 						Instance = $sample.InstanceName
 						Value = $sample.cookedvalue
 					}# end $ioObj
-
+					
 						# assign the object to a temporary array
 					$col += $ioObj
-
+					
 						# assign the data in the temporary array to the final results array
 					$result += $col
-
+					
 				}# end foreach
 			} catch
 			{
 					# write any errors to the console
 				Write-Warning -Message " Error in Get-CounterStats function: $_"
-
+				
 			}# try/catch
 		}# PROCESS
-
+		
 		END
 		{
 				# sort the order of the results
-			$result | Select-Object TimeStamp, Counter, Instance, Value
-
+			$result
+			
 		}# END
 	}# Get-CounterStats
-
+	
 	#region Counter Variables
 	$summaryCounters = @(
 	'\Network Interface(*)\Bytes Total/sec',
@@ -159,25 +158,25 @@ BEGIN
 	'\PhysicalDisk(_total)\% Disk Time',
 	'\physicaldisk(_total)\current disk queue length'
 	)
-
+	
 	$ramCounters = @(
 	'\Memory\% Committed Bytes In Use',
 	'\Memory\Available MBytes',
 	'\memory\cache faults/sec'
 	)
-
+	
 	$processCounters = @(
 	'\Process(*)\IO Read Operations/sec',
 	'\Process(*)\IO Write Operations/sec',
 	'\Process(*)\IO Data Operations/sec',
 	'\Process(*)\IO Other Operations/sec'
 	)
-
+	
 	$processorCounters = @(
 	'\Processor(*)\% Processor Time',
 	'\Processor Performance(*)\% of Maximum Frequency'
 	)
-
+	
 	$diskLogicalCounters = @(
 	'\LogicalDisk(*)\Disk Transfers/sec',
 	'\LogicalDisk(*)\Disk Reads/sec',
@@ -193,9 +192,14 @@ BEGIN
 	'\LogicalDisk(*)\% Disk Time',
 	'\LogicalDisk(*)\% Disk Read Time',
 	'\LogicalDisk(*)\% Disk Write Time',
-	'\LogicalDisk(*)\Split IO/Sec'
+	'\LogicalDisk(*)\Split IO/Sec',
+	'\LogicalDisk(*)\Disk Bytes/sec',
+	'\LogicalDisk(*)\Avg. Disk Bytes/Read',
+	'\LogicalDisk(*)\Avg. Disk Bytes/Write',
+	'\LogicalDisk(*)\Disk Read Bytes/sec',
+	'\LogicalDisk(*)\Disk Write Bytes/sec'
 	)
-
+	
 	$diskPhysicalCounters = @(
 	'\PhysicalDisk(*)\Disk Transfers/sec',
 	'\PhysicalDisk(*)\Disk Reads/sec',
@@ -211,9 +215,14 @@ BEGIN
 	'\PhysicalDisk(*)\% Disk Time',
 	'\PhysicalDisk(*)\% Disk Read Time',
 	'\PhysicalDisk(*)\% Disk Write Time',
-	'\PhysicalDisk(*)\Split IO/Sec'
+	'\PhysicalDisk(*)\Split IO/Sec',
+	'\PhysicalDisk(*)\Disk Bytes/sec',
+	'\PhysicalDisk(*)\Disk Read Bytes/sec',
+	'\PhysicalDisk(*)\Disk Write Bytes/sec',
+	'\PhysicalDisk(*)\Avg. Disk Bytes/Read',
+	'\PhysicalDisk(*)\Avg. Disk Bytes/Write'
 	)
-
+	
 	$networkCounters = @(
 	'\Network Interface(*)\Bytes Total/sec',
 	'\Network Interface(*)\Bytes Received/sec',
@@ -236,23 +245,23 @@ PROCESS
 		{
 				# set the console window title message
 			$host.ui.RawUI.WindowTitle = "Gathering Counter Statistics. Do Not Close Window."
-
+			
 				# if the report exists, delete it so no new data is appended to a sheet with old data
 			if (Test-Path -Path $ReportPath)
 			{
 				Write-Warning -Message "Export file exists; removing now..."
-
+				
 				Remove-Item $ReportPath -Force | Out-Null
 			}# if
-
+			
 			Write-Verbose -Message "Collecting counters from $ComputerName..."
 			Write-Verbose -Message "The collection will end at $timeEnd"
-
+			
 			Do
 			{
 					# grab the start time that the loop was entered
 				$TimeNow = Get-Date
-
+				
 				if ($TimeEnd -gt $TimeStart)
 				{
 						# switch block that reads the string value assigned to the -Counters param and runs the associated counters collection
@@ -290,17 +299,17 @@ PROCESS
 							Export-Csv $ReportPath -Append -NoTypeInformation
 						}
 					}# switch
-
+					
 				}# if
-
+				
 					# wait 30 seconds before looping through the funcion, again
 				Start-Sleep -Seconds 30
-
+				
 			}# Do
-
-				# when the time is newer than the end time, end the loop
+			
+				# when the current time is past the set end time, stop the collection
 			until ($TimeNow -ge $TimeEnd)
-
+			
 		} else
 		{
 				# if no run time value was supplied, simply output to the console
@@ -330,19 +339,19 @@ PROCESS
 					Get-CounterStats -System $ComputerName -PerfCounters $summaryCounters |
 					Where-Object { $_.Instance -notlike 'isatap*' -and $_.Instance -notlike '*virtual wifi*' -and $_.Instance -notlike 'teredo*' }
 				}
-			}# switch
-
+			}# switch 
+			
 		}# if/else
 	} catch
 	{
 		Write-Warning -Message "$_"
 	}# try/catch
-
+	
 }# PROCESS
 
 END
 {
 	Write-Verbose -Message "Script Execution Complete..."
-
+	
 	$host.ui.RawUI.WindowTitle = $windowTitle
 }# END
