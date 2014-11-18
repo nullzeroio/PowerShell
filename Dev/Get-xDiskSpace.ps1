@@ -38,7 +38,8 @@ Output warning when a server that does not support WSMAN is supplied
 .PARAMETER UseDCOM
     Connect via DCOM instead of WINRM
 .NOTES
-    20140915    K. Kirkpatrick      Created
+    20140915    K. Kirkpatrick      [+] Created
+	20141118	K. Kirkpatrick		[+] Moved to 'Dev'; still need to improve behavior to fall back to WMI for legacy server OSes
 
     TODO: Dynamic fall-back to WMI
 

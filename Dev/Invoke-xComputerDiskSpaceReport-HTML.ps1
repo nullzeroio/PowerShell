@@ -8,7 +8,7 @@
         If attaching the HTML report is desired, edit the EMail settings attachemtn location variable and go to the
         bottom of the script and un-comment the attachment options.
 
-        TAG:PUBLIC
+        #TAG:PUBLIC
 #>
 
 # Custom HTML Report Formatting
