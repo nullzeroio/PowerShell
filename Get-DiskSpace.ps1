@@ -17,8 +17,8 @@
 	.\Get-DiskSpace.ps1 -ComputerName (Get-Content C:\ServerList.txt) -Verbose | Where-Object {$_.PercentFree -lt 10} | Export-Csv C:\LowDiskSpaceReport.csv -NoTypeInformation
 .NOTES
 
-	20141117	K. Kirkpatrick		Created
-
+	20141117	K. Kirkpatrick		[+] Created
+	20141118	K. Kirkpatrick		[+] ComputerName is no longer required; set the default to $(hostname)
 
 	#TAG:PUBLIC
 
@@ -40,12 +40,12 @@
 [cmdletbinding(PositionalBinding = $true,
 			   DefaultParameterSetName = "Default")]
 param (
-	[parameter(mandatory = $true,
+	[parameter(mandatory = $false,
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true,
 			   Position = 0)]
 	[alias("Comp")]
-	[string[]]$ComputerName
+	[string[]]$ComputerName = "$(hostname)"
 )
 
 BEGIN
