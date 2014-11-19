@@ -22,7 +22,7 @@
 
 
 	#TAG:PUBLIC
-	
+
 	GitHub:	 https://github.com/vN3rd
 	Twitter:  @vN3rd
 	Email:	 kevin@pinelabs.co
@@ -44,24 +44,23 @@ param (
 	[parameter(Mandatory = $false,
 			   Position = 0,
 			   ValueFromPipeline = $true,
-			   ValueFromPipelineByPropertyName = $true,
-			   ParameterSetName = "Default")]
+			   ValueFromPipelineByPropertyName = $true)]
 	[alias("Comp", "CN")]
-	[string[]]$ComputerName = "localhost",
+	[string[]]$ComputerName = "$(hostname)",
 
 	[parameter(Mandatory = $true,
 			   Position = 1,
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true,
-			   ParameterSetName = "Default",
-			   HelpMessage = "Enter full patch ID (ex: KB1234567) ")]
+			   HelpMessage = "Enter full HotFix ID (ex: KB1234567) ")]
 	[alias("HotFix", "Patch")]
+	[validatepattern('^KB\d{7}$')]
 	[string]$HotFixID
 )
 
 BEGIN
 {
-
+		# Set global EA pref so that all errors are treated as terminating and get caught in the 'catch' block
 	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
 }# BEGIN
@@ -70,23 +69,23 @@ PROCESS
 {
 	foreach ($C in $ComputerName)
 	{
-		# Create counter variable and increment by 1 for each item in the collection
+			# Create counter variable and increment by 1 for each item in the collection
 		$i++
 
-		# Call out variables and set/reset values
+			# Call out variables and set/reset values
 		$hotfixQuery = $null
 		$objCollection = @()
 
-		# If connectivity to remote system is successful, continue
+			# If connectivity to remote system is successful, continue
 		if (Test-Connection $C -Count 2 -Quiet)
 		{
 			try
 			{
 				Write-Verbose -Message "Searching for HotFix ID $($HotFixID.toupper()) on $($C.toupper())"
 
-				$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C -ErrorAction 'SilentlyContinue' | Select-Object Source, Description, HotFixID, InstalledBy, InstalledOn
+				$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C | Select-Object Source, Description, HotFixID, InstalledBy, InstalledOn
 
-				# Create obj for reachable systems
+					# Create obj for reachable systems
 				$objHotFix = [PSCustomObject] @{
 					SystemName = $C.ToUpper()
 					Description = $hotfixQuery.Description
@@ -96,7 +95,7 @@ PROCESS
 					Error = if ($hotfixQuery.HotFixID -eq $null) { "HotFix $($HotFixID.toupper()) does not appear to be installed" }
 				}# $objSvc
 
-				# Add the results to the $objCollection array
+					# Add the results to the $objCollection array
 				$objCollection += $objHotFix
 
 					<# Add the contents of the $objCollection array to the $Results variable. This may seem redundant
@@ -108,13 +107,13 @@ PROCESS
 			{
 				Write-Warning -Message "$C - $_"
 
-				# Create obj for systems that are reachable but incur an error
+					# Create obj for systems that are reachable but incur an error
 				$objWarn = [PSCustomObject] @{
 					SystemName = [string]$C
 					Error = $_
 				}# $objWarn
 
-				# See the comment in the 'try' block for detail on $objCollection & $Results variables
+					# See the comment in the 'try' block for detail on $objCollection & $Results variables
 				$objCollection += $objWarn
 				$Results += $objCollection
 
@@ -123,13 +122,13 @@ PROCESS
 		{
 			Write-Warning -Message "$C is unreachable"
 
-			# Create obj for systems that are not reachable
+				# Create obj for systems that are not reachable
 			$objDown = [PSCustomObject] @{
 				SystemName = [string]$C
 				Error = "$C is unreachable"
 			}# $objDown
 
-			# See the comment in the first 'try' block for detail on $objCollection & $Results variables
+				# See the comment in the first 'try' block for detail on $objCollection & $Results variables
 			$objCollection += $objDown
 			$Results += $objCollection
 
