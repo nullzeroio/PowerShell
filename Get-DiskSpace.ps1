@@ -54,6 +54,7 @@ BEGIN
 
 	$objResults = @()
 
+
 	$SizeInGB = @{ Name = "SizeGB"; Expression = { "{0:N2}" -f ($_.Size/1GB) } }
 	$FreespaceInGB = @{ Name = "FreespaceGB"; Expression = { "{0:N2}" -f ($_.Freespace/1GB) } }
 	$PercentFree = @{ name = "PercentFree"; Expression = { [int](($_.FreeSpace/$_.Size) * 100) } }
@@ -89,6 +90,9 @@ PROCESS
 						PercentFree = $item.PercentFree
 					}# $objDiskInfo
 
+						# define custom type name
+					$objDiskinfo.PSTypeNames.Insert(0,'PSCustomObject.DiskSpace')
+
 					$colDiskInfo += $objDiskInfo
 					$objResults += $colDiskInfo
 				}# foreach
@@ -108,5 +112,11 @@ PROCESS
 
 END
 {
+
+	$defaultProperties = @('SystemName','DriveLetter','PercentFree')
+	$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’,[string[]]$defaultProperties)
+	$PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($defaultDisplayPropertySet)
+	$objResults | Add-Member MemberSet PSStandardMembers $PSStandardMembers
 	$objResults
+
 }# END
