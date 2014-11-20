@@ -14,9 +14,9 @@
 .OUTPUTS
 	System.Management.Automation.PSCustomObject
 .EXAMPLE
-	.\Get-HotFixStatus.ps1 -ComputerName SERVER1.corp.com, SERVER2.corp.com -Verbose | Format-Table -Autosize
+	.\Get-HotFixStatus.ps1 -ComputerName SERVER1.corp.com, SERVER2.corp.com -HotFixID KB3011780 -Verbose | Format-Table -Autosize
 .EXAMPLE
-	.\Get-HotFixStatus.ps1 -ComputerName (Get-Content C:\ServerList.txt) -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
+	.\Get-HotFixStatus.ps1 -ComputerName (Get-Content C:\ServerList.txt) -HotFixID KB3011780 -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
 .NOTES
 	20141119	K. Kirkpatrick		Created
 
@@ -75,6 +75,8 @@ PROCESS
 			# Call out variables and set/reset values
 		$hotfixQuery = $null
 		$objCollection = @()
+		$objHotFix = @()
+
 
 			# If connectivity to remote system is successful, continue
 		if (Test-Connection $C -Count 2 -Quiet)
@@ -83,7 +85,7 @@ PROCESS
 			{
 				Write-Verbose -Message "Searching for HotFix ID $($HotFixID.toupper()) on $($C.toupper())"
 
-				$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C | Select-Object Source, Description, HotFixID, InstalledBy, InstalledOn
+				$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C -ErrorAction 'SilentlyContinue' | Select-Object Source, Description, HotFixID, InstalledBy, InstalledOn
 
 					# Create obj for reachable systems
 				$objHotFix = [PSCustomObject] @{
@@ -107,14 +109,18 @@ PROCESS
 			{
 				Write-Warning -Message "$C - $_"
 
-					# Create obj for systems that are reachable but incur an error
-				$objWarn = [PSCustomObject] @{
-					SystemName = [string]$C
+					# Store data in obj for systems that are reachable but incur an error
+				$objHotFix = [PSCustomObject] @{
+					SystemName = $C.ToUpper()
+					Description = $null
+					HotFixID = $null
+					InstalledBy = $null
+					InstalledOn = $null
 					Error = $_
-				}# $objWarn
+				}# objHotFix
 
 					# See the comment in the 'try' block for detail on $objCollection & $Results variables
-				$objCollection += $objWarn
+				$objCollection += $objHotFix
 				$Results += $objCollection
 
 			}# try/catch
@@ -122,14 +128,19 @@ PROCESS
 		{
 			Write-Warning -Message "$C is unreachable"
 
-				# Create obj for systems that are not reachable
-			$objDown = [PSCustomObject] @{
-				SystemName = [string]$C
+				# Capture unreachable systems and store the output in an object
+			$objHotFix = [PSCustomObject] @{
+				SystemName = $C.ToUpper()
+				Description = $null
+				HotFixID = $null
+				InstalledBy = $null
+				InstalledOn = $null
 				Error = "$C is unreachable"
-			}# $objDown
+			}# $objHotFix
+
 
 				# See the comment in the first 'try' block for detail on $objCollection & $Results variables
-			$objCollection += $objDown
+			$objCollection += $objHotFix
 			$Results += $objCollection
 
 		}# else
