@@ -20,6 +20,8 @@
 .OUTPUTS
 	System.Management.Automation.PSCustomObject
 .EXAMPLE
+	.\Get-NAVolDetail.ps1 -Controller NETAPP01 -Verbose | Where-Object {$_.vFiler -ne 'vFiler0' | ogv
+.EXAMPLE
 	.\Get-NAVolDetail.ps1 -Controller NETAPP01 -Verbose | Format-Table -AutoSize -Property *
 .EXAMPLE
 	.\Get-NAVolDetail.ps1 -Controller NETAPP01,NETAPP02 -Verbose | Out-GridView
