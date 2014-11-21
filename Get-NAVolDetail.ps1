@@ -25,6 +25,45 @@
 	.\Get-NAVolDetail.ps1 -Controller NETAPP01,NETAPP02 -Verbose | Out-GridView
 .EXAMPLE
 	.\Get-NAVolDetail.ps1 -Controller (Get-Content C:\NetAppFilerList.txt) -Verbose | Export-Csv C:\NetApp_Vol_Report.csv -NoTypeInformation
+.EXAMPLE
+	.\Get-NAVolDetail.ps1 -Controller NETAPP01
+	
+## Output from ONTAP verions < 8.2 ##
+
+Controller            : NETAPP01
+VolName               : netapp01_nfs1
+PercentUsed           : 21%
+TotalSize             : 1.0 TB
+Available             : 812.4 GB
+VolState              : online
+Dedupe                : True
+TotalFootPrint        : N/A
+VolDataFootPrint      : N/A
+VolGuaranteeFootPrint : N/A
+FilesUsed             : 370
+FilesTotal            : 32M
+vFiler                : vfiler0
+Aggr                  : LEWNA01_NFS01
+AggrSize              : N/A
+
+## Output from ONTAP verions > 8.2 ##
+
+Controller            : NETAPP01
+VolName               : cifs_p_data
+PercentUsed           : 71%
+TotalSize             : 4.8 TB
+Available             : 1.4 TB
+VolState              : online
+Dedupe                : True
+TotalFootPrint        : 4 TB
+VolDataFootPrint      : 4 TB
+VolGuaranteeFootPrint : 0
+FilesUsed             : 16M
+FilesTotal            : 32M
+vFiler                : cifsvf1
+Aggr                  : aggr1
+AggrSize              : 22 TB
+
 .NOTES
 	20141121	K. Kirkpatrick		Created
 
