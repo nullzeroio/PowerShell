@@ -43,7 +43,7 @@ VolGuaranteeFootPrint : N/A
 FilesUsed             : 370
 FilesTotal            : 32M
 vFiler                : vfiler0
-Aggr                  : LEWNA01_NFS01
+Aggr                  : aggr1
 AggrSize              : N/A
 
 ## Output from ONTAP verions > 8.2 ##
