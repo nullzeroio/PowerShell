@@ -9,6 +9,8 @@
 	Name of computer / computers
 .PARAMETER HotFixID
 	Name of HotFix to search for
+.PARAMETER MostRecent
+	Use this switch param to identify what the last patch installed was and when it was installed
 .INPUTS
 	System.String
 .OUTPUTS
@@ -18,8 +20,9 @@
 .EXAMPLE
 	.\Get-HotFixStatus.ps1 -ComputerName (Get-Content C:\ServerList.txt) -HotFixID KB3011780 -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
 .NOTES
-	20141119	K. Kirkpatrick		Created
-
+	20141119	K. Kirkpatrick		[+] Created
+	20141124	K. Kirkpatrick		[+] Cleaned up the way objects get stored to final $Results array
+									[+] Added -MostRecent switch variable which will return the most recent installed patch
 
 	#TAG:PUBLIC
 
@@ -46,22 +49,32 @@ param (
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true)]
 	[alias("Comp", "CN")]
-	[string[]]$ComputerName = "$(hostname)",
+	[string[]]$ComputerName = "localhost",
 
 	[parameter(Mandatory = $true,
 			   Position = 1,
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true,
-			   HelpMessage = "Enter full HotFix ID (ex: KB1234567) ")]
+			   HelpMessage = "Enter full HotFix ID (ex: KB1234567) ",
+			   ParameterSetName = "Default")]
 	[alias("HotFix", "Patch")]
 	[validatepattern('^KB\d{7}$')]
-	[string]$HotFixID
+	[string]$HotFixID,
+
+	[parameter(Mandatory = $false,
+			   Position = 2,
+			   ParameterSetName = "MostRecent")]
+	[switch]$MostRecent
+
 )
 
 BEGIN
 {
-		# Set global EA pref so that all errors are treated as terminating and get caught in the 'catch' block
+	# Set global EA pref so that all errors are treated as terminating and get caught in the 'catch' block
 	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
+
+	# define the final results array
+	$Results = @()
 
 }# BEGIN
 
@@ -69,66 +82,107 @@ PROCESS
 {
 	foreach ($C in $ComputerName)
 	{
-			# Create counter variable and increment by 1 for each item in the collection
+		# Create counter variable and increment by 1 for each item in the collection
 		$i++
 
-			# Call out variables and set/reset values
+		# Call out variables and set/reset values
 		$hotfixQuery = $null
-		$objCollection = @()
 		$objHotFix = @()
 
-
-			# If connectivity to remote system is successful, continue
+		# If connectivity to remote system is successful, continue
 		if (Test-Connection $C -Count 2 -Quiet)
 		{
-			try
+			if ($MostRecent)
 			{
-				Write-Verbose -Message "Searching for HotFix ID $($HotFixID.toupper()) on $($C.toupper())"
+				try
+				{
+					Write-Verbose -Message "Searching for most recent HotFix on $($C.toupper())"
 
-				$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C -ErrorAction 'SilentlyContinue' | Select-Object Source, Description, HotFixID, InstalledBy, InstalledOn
+					$hotfixQuery = (Get-HotFix -ComputerName $C -ErrorAction 'SilentlyContinue' |
+					Where-Object { $_.InstalledOn -ne $null } |
+					Sort-Object InstalledOn -Descending)[0]
 
 					# Create obj for reachable systems
-				$objHotFix = [PSCustomObject] @{
-					SystemName = $C.ToUpper()
-					Description = $hotfixQuery.Description
-					HotFixID = $hotfixQuery.HotFixID
-					InstalledBy = $hotfixQuery.InstalledBy
-					InstalledOn = $hotfixQuery.InstalledOn
-					Error = if ($hotfixQuery.HotFixID -eq $null) { "HotFix $($HotFixID.toupper()) does not appear to be installed" }
-				}# $objSvc
+					$objHotFix = [PSCustomObject] @{
+						SystemName = $C.ToUpper()
+						Description = $hotfixQuery.Description
+						HotFixID = $hotfixQuery.HotFixID
+						InstalledBy = $hotfixQuery.InstalledBy
+						InstalledOn = $hotfixQuery.InstalledOn
+						Error = if ($hotfixQuery.HotFixID -eq $null) { "System reachable but errors may have been encountered collecting HotFix details" }
+					}# $objSvc
 
-					# Add the results to the $objCollection array
-				$objCollection += $objHotFix
+					# add obj data to final results array
+					$Results += $objHotFix
 
-					<# Add the contents of the $objCollection array to the $Results variable. This may seem redundant
-					but we are clearing the the $objCollection variable on each interation through foreach, in order
-					to maintain data integrety. The $Results variable is storing the summation of all interations #>
-				$Results += $objCollection
-
-			} catch
-			{
-				Write-Warning -Message "$C - $_"
+				} catch
+				{
+					Write-Warning -Message "$C - $_"
 
 					# Store data in obj for systems that are reachable but incur an error
-				$objHotFix = [PSCustomObject] @{
-					SystemName = $C.ToUpper()
-					Description = $null
-					HotFixID = $null
-					InstalledBy = $null
-					InstalledOn = $null
-					Error = $_
-				}# objHotFix
+					$objHotFix = [PSCustomObject] @{
+						SystemName = $C.ToUpper()
+						Description = $null
+						HotFixID = $null
+						InstalledBy = $null
+						InstalledOn = $null
+						Error = $_
+					}# objHotFix
 
-					# See the comment in the 'try' block for detail on $objCollection & $Results variables
-				$objCollection += $objHotFix
-				$Results += $objCollection
+					# add obj data to final results array
+					$Results += $objHotFix
 
-			}# try/catch
+				}# try/catch
+
+			} else
+			{
+				try
+				{
+					Write-Verbose -Message "Searching for HotFix ID $($HotFixID.toupper()) on $($C.toupper())"
+
+					$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C -ErrorAction 'SilentlyContinue' |
+					Where-Object { $_.HotFixID -ne 'File 1' }
+
+					# Create obj for reachable systems
+					$objHotFix = [PSCustomObject] @{
+						SystemName = $C.ToUpper()
+						Description = $hotfixQuery.Description
+						HotFixID = $hotfixQuery.HotFixID
+						InstalledBy = $hotfixQuery.InstalledBy
+						InstalledOn = $hotfixQuery.InstalledOn
+						Error = if ($hotfixQuery.HotFixID -eq $null) { "HotFix $($HotFixID.toupper()) does not appear to be installed" }
+					}# $objSvc
+
+					# add obj data to final results array
+					$Results += $objHotFix
+
+				} catch
+				{
+					Write-Warning -Message "$C - $_"
+
+					# Store data in obj for systems that are reachable but incur an error
+					$objHotFix = [PSCustomObject] @{
+						SystemName = $C.ToUpper()
+						Description = $null
+						HotFixID = $null
+						InstalledBy = $null
+						InstalledOn = $null
+						Error = $_
+					}# objHotFix
+
+
+					# add obj data to final results array
+					$Results += $objHotFix
+
+				}# try/catch
+
+			}# if/else
+
 		} else
 		{
 			Write-Warning -Message "$C is unreachable"
 
-				# Capture unreachable systems and store the output in an object
+			# Capture unreachable systems and store the output in an object
 			$objHotFix = [PSCustomObject] @{
 				SystemName = $C.ToUpper()
 				Description = $null
@@ -138,24 +192,23 @@ PROCESS
 				Error = "$C is unreachable"
 			}# $objHotFix
 
-
-				# See the comment in the first 'try' block for detail on $objCollection & $Results variables
-			$objCollection += $objHotFix
-			$Results += $objCollection
+			# add obj data to final results array
+			$Results += $objHotFix
 
 		}# else
 
-			# Write total progress to progress bar
+		# Write total progress to progress bar
 		$TotalServers = $ComputerName.Length
 		$PercentComplete = [int](($i / $TotalServers) * 100)
 		Write-Progress -Activity "Working..." -CurrentOperation "$PercentComplete% Complete" -Status "Percent Complete" -PercentComplete $PercentComplete
 
 	}# foreach
+
 }# PROCESS
 
 END
 {
-		# Call the results object
+	# Call the results object
 	$Results
 
 }# END
