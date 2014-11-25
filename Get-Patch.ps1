@@ -41,6 +41,7 @@
 [-------------------------------------DISCLAIMER-------------------------------------]
 #>
 
+#Requires -Version 3
 
 [cmdletbinding(DefaultParameterSetName = "Default")]
 param (
@@ -53,13 +54,13 @@ param (
 
 	[parameter(Mandatory = $true,
 			   Position = 1,
-			   ValueFromPipeline = $true,
-			   ValueFromPipelineByPropertyName = $true,
-			   HelpMessage = "Enter full HotFix ID (ex: KB1234567) ",
+			   ValueFromPipeline = $false,
+			   ValueFromPipelineByPropertyName = $false,
+			   HelpMessage = "Enter full patch (HotFix) ID (ex: KB1234567) ",
 			   ParameterSetName = "Default")]
 	[alias("HotFix", "Patch")]
 	[validatepattern('^KB\d{7}$')]
-	[string]$HotFixID,
+	[string]$PatchID,
 
 	[parameter(Mandatory = $false,
 			   Position = 2,
@@ -86,8 +87,8 @@ PROCESS
 		$i++
 
 		# Call out variables and set/reset values
-		$hotfixQuery = $null
-		$objHotFix = @()
+		$patchQuery = $null
+		$objPatch = @()
 
 		# If connectivity to remote system is successful, continue
 		if (Test-Connection $C -Count 2 -Quiet)
@@ -96,41 +97,41 @@ PROCESS
 			{
 				try
 				{
-					Write-Verbose -Message "Searching for most recent HotFix on $($C.toupper())"
+					Write-Verbose -Message "Searching for most recent patch on $($C.toupper())"
 
-					$hotfixQuery = (Get-HotFix -ComputerName $C -ErrorAction 'SilentlyContinue' |
+					$patchQuery = (Get-HotFix -ComputerName $C -ErrorAction 'SilentlyContinue' |
 					Where-Object { $_.InstalledOn -ne $null } |
 					Sort-Object InstalledOn -Descending)[0]
 
 					# Create obj for reachable systems
-					$objHotFix = [PSCustomObject] @{
+					$objPatch = [PSCustomObject] @{
 						SystemName = $C.ToUpper()
-						Description = $hotfixQuery.Description
-						HotFixID = $hotfixQuery.HotFixID
-						InstalledBy = $hotfixQuery.InstalledBy
-						InstalledOn = $hotfixQuery.InstalledOn
-						Error = if ($hotfixQuery.HotFixID -eq $null) { "System reachable but errors may have been encountered collecting HotFix details" }
+						Description = $patchQuery.Description
+						PatchID = $patchQuery.HotFixID
+						InstalledBy = $patchQuery.InstalledBy
+						InstalledOn = $patchQuery.InstalledOn
+						Error = if ($patchQuery.HotFixID -eq $null) { "System reachable but errors may have been encountered collecting patch details" }
 					}# $objSvc
 
 					# add obj data to final results array
-					$Results += $objHotFix
+					$Results += $objPatch
 
 				} catch
 				{
 					Write-Warning -Message "$C - $_"
 
 					# Store data in obj for systems that are reachable but incur an error
-					$objHotFix = [PSCustomObject] @{
+					$objPatch = [PSCustomObject] @{
 						SystemName = $C.ToUpper()
 						Description = $null
-						HotFixID = $null
+						PatchID = $null
 						InstalledBy = $null
 						InstalledOn = $null
 						Error = $_
-					}# objHotFix
+					}# objPatch
 
 					# add obj data to final results array
-					$Results += $objHotFix
+					$Results += $objPatch
 
 				}# try/catch
 
@@ -138,41 +139,41 @@ PROCESS
 			{
 				try
 				{
-					Write-Verbose -Message "Searching for HotFix ID $($HotFixID.toupper()) on $($C.toupper())"
+					Write-Verbose -Message "Searching for patch $($PatchID.toupper()) on $($C.toupper())"
 
-					$hotfixQuery = Get-HotFix -Id $HotFixID -ComputerName $C -ErrorAction 'SilentlyContinue' |
+					$patchQuery = Get-HotFix -Id $PatchID -ComputerName $C -ErrorAction 'SilentlyContinue' |
 					Where-Object { $_.HotFixID -ne 'File 1' }
 
 					# Create obj for reachable systems
-					$objHotFix = [PSCustomObject] @{
+					$objPatch = [PSCustomObject] @{
 						SystemName = $C.ToUpper()
-						Description = $hotfixQuery.Description
-						HotFixID = $hotfixQuery.HotFixID
-						InstalledBy = $hotfixQuery.InstalledBy
-						InstalledOn = $hotfixQuery.InstalledOn
-						Error = if ($hotfixQuery.HotFixID -eq $null) { "HotFix $($HotFixID.toupper()) does not appear to be installed" }
+						Description = $patchQuery.Description
+						PatchID = $patchQuery.HotFixID
+						InstalledBy = $patchQuery.InstalledBy
+						InstalledOn = $patchQuery.InstalledOn
+						Error = if ($patchQuery.HotFixID -eq $null) { "Patch $($PatchID.toupper()) does not appear to be installed" }
 					}# $objSvc
 
 					# add obj data to final results array
-					$Results += $objHotFix
+					$Results += $objPatch
 
 				} catch
 				{
 					Write-Warning -Message "$C - $_"
 
 					# Store data in obj for systems that are reachable but incur an error
-					$objHotFix = [PSCustomObject] @{
+					$objPatch = [PSCustomObject] @{
 						SystemName = $C.ToUpper()
 						Description = $null
-						HotFixID = $null
+						PatchID = $null
 						InstalledBy = $null
 						InstalledOn = $null
 						Error = $_
-					}# objHotFix
+					}# objPatch
 
 
 					# add obj data to final results array
-					$Results += $objHotFix
+					$Results += $objPatch
 
 				}# try/catch
 
@@ -183,17 +184,17 @@ PROCESS
 			Write-Warning -Message "$C is unreachable"
 
 			# Capture unreachable systems and store the output in an object
-			$objHotFix = [PSCustomObject] @{
+			$objPatch = [PSCustomObject] @{
 				SystemName = $C.ToUpper()
 				Description = $null
-				HotFixID = $null
+				PatchID = $null
 				InstalledBy = $null
 				InstalledOn = $null
 				Error = "$C is unreachable"
-			}# $objHotFix
+			}# $objPatch
 
 			# add obj data to final results array
-			$Results += $objHotFix
+			$Results += $objPatch
 
 		}# else
 
