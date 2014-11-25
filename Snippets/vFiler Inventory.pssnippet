@@ -1,0 +1,43 @@
+<#
+
+.NOTES
+    20141020    K. Kirkpatrick      Created
+    20141125    K. Kirkpatrick      Updated logic
+
+    #TAG:PUBLIC
+
+#>
+
+foreach ($f in $Filers)
+    {
+        Write-Output "Working on $f"
+
+        $vFiler = $null
+        $vFilerQuery = $null
+
+        try
+        {
+            $vFiler = Get-NaVfiler -Controller (Connect-NaController $f) | where name -notlike vFiler0 | select *
+            $vFilerParent = @{name='Parent';e={ $f } }
+            $vFilerQuery = $vFiler | Select $vFilerParent,Name,Status,DNSInfo
+
+            foreach ($v in $vFilerQuery)
+            {
+                $objVfiler = $null
+                $objVfiler = [PSCustomObject] @{
+                    Parent = $v.parent
+                    Name = $v.name
+                    Status = $v.Status
+                    DNSInfo = $v.DNSInfo
+                }# $objVfiler
+
+                $finalResult += $objVfiler
+            }# foreach
+
+        } catch
+        {
+            Write-Warning -Message "$f - $_"
+        }# try/catch
+    }# foreach
+
+$finalResult
