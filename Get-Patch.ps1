@@ -4,7 +4,7 @@
 .DESCRIPTION
 	Search a computer/s for the install status of a particular Microsoft HotFix (Patch)
 
-	You must supply the hotfix name in the format of KBxxxxxxx (EX: KB3011768)
+	You must supply the patch name in the format of KBxxxxxxx (EX: KB3011780)
 .PARAMETER ComputerName
 	Name of computer / computers
 .PARAMETER HotFixID
@@ -16,13 +16,16 @@
 .OUTPUTS
 	System.Management.Automation.PSCustomObject
 .EXAMPLE
-	.\Get-HotFixStatus.ps1 -ComputerName SERVER1.corp.com, SERVER2.corp.com -HotFixID KB3011780 -Verbose | Format-Table -Autosize
+	.\Get-Patch.ps1 -ComputerName SERVER1.corp.com, SERVER2.corp.com -PatchID KB3011780 -Verbose | Format-Table -Autosize
 .EXAMPLE
-	.\Get-HotFixStatus.ps1 -ComputerName (Get-Content C:\ServerList.txt) -HotFixID KB3011780 -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
+	.\Get-Patch.ps1 -ComputerName (Get-Content C:\ServerList.txt) -PatchID KB3011780 -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
 .NOTES
-	20141119	K. Kirkpatrick		[+] Created
+	20141119	K. Kirkpatrick		[+] Added ValidatePattern REGEX
 	20141124	K. Kirkpatrick		[+] Cleaned up the way objects get stored to final $Results array
 									[+] Added -MostRecent switch variable which will return the most recent installed patch
+	20141125	K. Kirkpatrick 		[+] Renamed from Get-HotFixStatus to Get-Patch
+									[+] Renamed -HotFixID to -PatchID
+									[+] Renamed variables and properties that used 'HotFix' to 'Patch'
 
 	#TAG:PUBLIC
 
