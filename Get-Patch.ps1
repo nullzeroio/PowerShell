@@ -26,6 +26,7 @@
 	20141125	K. Kirkpatrick 		[+] Renamed from Get-HotFixStatus to Get-Patch
 									[+] Renamed -HotFixID to -PatchID
 									[+] Renamed variables and properties that used 'HotFix' to 'Patch'
+									[+] Added SystemUptimeDHM to report uptime (Days.Hours.Minutes)
 
 	#TAG:PUBLIC
 
@@ -66,10 +67,8 @@ param (
 	[string]$PatchID,
 
 	[parameter(Mandatory = $false,
-			   Position = 2,
 			   ParameterSetName = "MostRecent")]
 	[switch]$MostRecent
-
 )
 
 BEGIN
@@ -79,6 +78,16 @@ BEGIN
 
 	# define the final results array
 	$Results = @()
+
+	# define array of properties to pull from Get-HotFix command
+	$patchProperties = @(
+	"CSName",
+	"Description",
+	"HotFixID",
+	"InstalledOn",
+	"InstalledBy",
+	"Caption"
+	)
 
 }# BEGIN
 
@@ -92,10 +101,39 @@ PROCESS
 		# Call out variables and set/reset values
 		$patchQuery = $null
 		$objPatch = @()
+		$uptimeQuery = $null
+		$calcUptime = $null
+		$uptime = $null
 
 		# If connectivity to remote system is successful, continue
 		if (Test-Connection $C -Count 2 -Quiet)
 		{
+			try
+			{
+				# gather uptime details on the destination system
+				$uptimeQuery = Get-WmiObject -ComputerName $C -Class Win32_OperatingSystem -Property LastBootUpTime
+				$calcUptime = (Get-Date) - ($uptimeQuery.converttodatetime($uptimeQuery.LastBootUpTime))
+				$uptime = "$($calcUptime.Days).$($calcUptime.hours).$($calcUptime.minutes)"
+
+			} catch
+			{
+				# Store data in obj for systems that are reachable but incur an error
+				$objPatch = [PSCustomObject] @{
+					SystemName = $C.ToUpper()
+					Description = $null
+					PatchID = $null
+					InstalledBy = $null
+					InstalledOn = $null
+					Link = $null
+					SystemUptimeDHM = $null
+					Error = "Uptime Query Error: $_ "
+				}# objPatch
+
+				# add obj data to final results array
+				$Results += $objPatch
+
+			}# try/catch
+
 			if ($MostRecent)
 			{
 				try
@@ -103,6 +141,7 @@ PROCESS
 					Write-Verbose -Message "Searching for most recent patch on $($C.toupper())"
 
 					$patchQuery = (Get-HotFix -ComputerName $C -ErrorAction 'SilentlyContinue' |
+					Select-Object $patchProperties |
 					Where-Object { $_.InstalledOn -ne $null } |
 					Sort-Object InstalledOn -Descending)[0]
 
@@ -113,6 +152,8 @@ PROCESS
 						PatchID = $patchQuery.HotFixID
 						InstalledBy = $patchQuery.InstalledBy
 						InstalledOn = $patchQuery.InstalledOn
+						Link = $patchQuery.Caption
+						SystemUptimeDHM = if ($uptime -ne $null) { $uptime } else { $null }
 						Error = if ($patchQuery.HotFixID -eq $null) { "System reachable but errors may have been encountered collecting patch details" }
 					}# $objSvc
 
@@ -130,7 +171,9 @@ PROCESS
 						PatchID = $null
 						InstalledBy = $null
 						InstalledOn = $null
-						Error = $_
+						Link = $null
+						SystemUptimeDHM = $null
+						Error = "Recent Patch Query Error: $_"
 					}# objPatch
 
 					# add obj data to final results array
@@ -145,6 +188,7 @@ PROCESS
 					Write-Verbose -Message "Searching for patch $($PatchID.toupper()) on $($C.toupper())"
 
 					$patchQuery = Get-HotFix -Id $PatchID -ComputerName $C -ErrorAction 'SilentlyContinue' |
+					Select-Object $patchProperties |
 					Where-Object { $_.HotFixID -ne 'File 1' }
 
 					# Create obj for reachable systems
@@ -154,6 +198,8 @@ PROCESS
 						PatchID = $patchQuery.HotFixID
 						InstalledBy = $patchQuery.InstalledBy
 						InstalledOn = $patchQuery.InstalledOn
+						Link = $patchQuery.Caption
+						SystemUptimeDHM = if ($uptime -ne $null) { $uptime } else { $null }
 						Error = if ($patchQuery.HotFixID -eq $null) { "Patch $($PatchID.toupper()) does not appear to be installed" }
 					}# $objSvc
 
@@ -171,7 +217,9 @@ PROCESS
 						PatchID = $null
 						InstalledBy = $null
 						InstalledOn = $null
-						Error = $_
+						Link = $null
+						SystemUptimeDHM = $null
+						Error = "Patch Query Error: $_"
 					}# objPatch
 
 
@@ -193,6 +241,8 @@ PROCESS
 				PatchID = $null
 				InstalledBy = $null
 				InstalledOn = $null
+				Link = $null
+				SystemUptimeDHM = $null
 				Error = "$C is unreachable"
 			}# $objPatch
 
