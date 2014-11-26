@@ -20,13 +20,18 @@
 .EXAMPLE
 	.\Get-Patch.ps1 -ComputerName (Get-Content C:\ServerList.txt) -PatchID KB3011780 -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
 .NOTES
-	20141119	K. Kirkpatrick		[+] Added ValidatePattern REGEX
-	20141124	K. Kirkpatrick		[+] Cleaned up the way objects get stored to final $Results array
-									[+] Added -MostRecent switch variable which will return the most recent installed patch
-	20141125	K. Kirkpatrick 		[+] Renamed from Get-HotFixStatus to Get-Patch
-									[+] Renamed -HotFixID to -PatchID
-									[+] Renamed variables and properties that used 'HotFix' to 'Patch'
-									[+] Added SystemUptimeDHM to report uptime (Days.Hours.Minutes)
+	20141119	K. Kirkpatrick
+		[+] Added ValidatePattern REGEX
+	20141124	K. Kirkpatrick
+		[+] Cleaned up the way objects get stored to final $Results array
+		[+] Added -MostRecent switch variable which will return the most recent installed patch
+	20141125	K. Kirkpatrick
+		[+] Renamed from Get-HotFixStatus to Get-Patch
+		[+] Renamed -HotFixID to -PatchID
+		[+] Renamed variables and properties that used 'HotFix' to 'Patch'
+		[+] Added UptimeInDays to report uptime (Days)
+	20141126	K. Kirkpatrick
+		[+] Changed spacing
 
 	#TAG:PUBLIC
 
@@ -50,24 +55,24 @@
 [cmdletbinding(DefaultParameterSetName = "Default")]
 param (
 	[parameter(Mandatory = $false,
-			   Position = 0,
-			   ValueFromPipeline = $true,
-			   ValueFromPipelineByPropertyName = $true)]
+						 Position = 0,
+						 ValueFromPipeline = $true,
+						 ValueFromPipelineByPropertyName = $true)]
 	[alias("Comp", "CN")]
 	[string[]]$ComputerName = "localhost",
 
 	[parameter(Mandatory = $true,
-			   Position = 1,
-			   ValueFromPipeline = $false,
-			   ValueFromPipelineByPropertyName = $false,
-			   HelpMessage = "Enter full patch (HotFix) ID (ex: KB1234567) ",
-			   ParameterSetName = "Default")]
+						 Position = 1,
+						 ValueFromPipeline = $false,
+						 ValueFromPipelineByPropertyName = $false,
+						 HelpMessage = "Enter full patch (HotFix) ID (ex: KB1234567) ",
+						 ParameterSetName = "Default")]
 	[alias("HotFix", "Patch")]
 	[validatepattern('^KB\d{7}$')]
 	[string]$PatchID,
 
 	[parameter(Mandatory = $false,
-			   ParameterSetName = "MostRecent")]
+						 ParameterSetName = "MostRecent")]
 	[switch]$MostRecent
 )
 
@@ -113,7 +118,7 @@ PROCESS
 				# gather uptime details on the destination system
 				$uptimeQuery = Get-WmiObject -ComputerName $C -Class Win32_OperatingSystem -Property LastBootUpTime
 				$calcUptime = (Get-Date) - ($uptimeQuery.converttodatetime($uptimeQuery.LastBootUpTime))
-				$uptime = "$($calcUptime.Days).$($calcUptime.hours).$($calcUptime.minutes)"
+				$uptime = $calcUptime.Days
 
 			} catch
 			{
@@ -125,7 +130,7 @@ PROCESS
 					InstalledBy = $null
 					InstalledOn = $null
 					Link = $null
-					SystemUptimeDHM = $null
+					UptimeInDays = $null
 					Error = "Uptime Query Error: $_ "
 				}# objPatch
 
@@ -153,7 +158,7 @@ PROCESS
 						InstalledBy = $patchQuery.InstalledBy
 						InstalledOn = $patchQuery.InstalledOn
 						Link = $patchQuery.Caption
-						SystemUptimeDHM = if ($uptime -ne $null) { $uptime } else { $null }
+						UptimeInDays = if ($uptime -ne $null) { $uptime } else { $null }
 						Error = if ($patchQuery.HotFixID -eq $null) { "System reachable but errors may have been encountered collecting patch details" }
 					}# $objSvc
 
@@ -172,7 +177,7 @@ PROCESS
 						InstalledBy = $null
 						InstalledOn = $null
 						Link = $null
-						SystemUptimeDHM = $null
+						UptimeInDays = $null
 						Error = "Recent Patch Query Error: $_"
 					}# objPatch
 
@@ -199,7 +204,7 @@ PROCESS
 						InstalledBy = $patchQuery.InstalledBy
 						InstalledOn = $patchQuery.InstalledOn
 						Link = $patchQuery.Caption
-						SystemUptimeDHM = if ($uptime -ne $null) { $uptime } else { $null }
+						UptimeInDays = if ($uptime -ne $null) { $uptime } else { $null }
 						Error = if ($patchQuery.HotFixID -eq $null) { "Patch $($PatchID.toupper()) does not appear to be installed" }
 					}# $objSvc
 
@@ -218,16 +223,14 @@ PROCESS
 						InstalledBy = $null
 						InstalledOn = $null
 						Link = $null
-						SystemUptimeDHM = $null
+						UptimeInDays = $null
 						Error = "Patch Query Error: $_"
 					}# objPatch
-
 
 					# add obj data to final results array
 					$Results += $objPatch
 
 				}# try/catch
-
 			}# if/else
 
 		} else
@@ -242,7 +245,7 @@ PROCESS
 				InstalledBy = $null
 				InstalledOn = $null
 				Link = $null
-				SystemUptimeDHM = $null
+				UptimeInDays = $null
 				Error = "$C is unreachable"
 			}# $objPatch
 
