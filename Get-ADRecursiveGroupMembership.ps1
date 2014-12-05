@@ -28,8 +28,12 @@
 .LINK
 
 .NOTES
-	20141104 	K. Kirkpatrick		Created
-	20141114	K. Kirkpatrick		Updated CBH
+	20141104 	K. Kirkpatrick
+	[+] Created
+	20141114	K. Kirkpatrick		
+	[+] Upated CBH
+	20141205	K. Kirkpatrick
+	[+] Modified how the domain is parsed from the group name provided
 
 	TO-DO
 	[ ] Consolidate down to only using the Quest AD PSSnapin, or convert everything to native MSFT AD PowerShell Module
@@ -188,8 +192,9 @@ PROCESS
 				# 20141104-KMK - Using the native AD PowerShell module here; I ran into issues adding group
 				# members to a globally accessible array. It processes the unique membership fast enough, for now,
 				# for it to still be useful
-			$domain = ($ParentGroupName).substring(0, 3).toupper()
-			$samAccountName = @{ label = 'Account'; expression={ "$domain\$($_.samaccountname)" } }
+			$userDomain = $ParentGroupName.Split('\')
+			$domain = $userDomain[0]
+			$samAccountName = @{ label = 'Account'; expression = { "$domain\$($_.samaccountname)" } }
 			$uniqueUsers = Get-ADGroupMember -Server $domain -Identity $ParentGroup.Name -Recursive | Select-Object $SamAccountName,Name
 
 			Write-Output "       Total Users: $(($UniqueUsers).count)  "
