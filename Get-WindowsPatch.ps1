@@ -18,6 +18,10 @@
 .EXAMPLE
 	.\Get-WindowsPatch.ps1 -ComputerName SERVER1.corp.com, SERVER2.corp.com -PatchID KB3011780 -Verbose | Format-Table -Autosize
 .EXAMPLE
+	.\Get-WindowsPatch.ps1 -ComputerName SERVER1.corp.com -PatchID KB3011780 -Verbose
+.EXAMPLE
+	.\Get-WindowsPatch.ps1 -ComputerName SERVER1.corp.com, SERVER2.corp.com -PatchID KB3011780 -Verbose | Out-GridView
+.EXAMPLE
 	.\Get-WindowsPatch.ps1 -ComputerName (Get-Content C:\ServerList.txt) -PatchID KB3011780 -Verbose | Export-Csv C:\ServerPatchReport.csv -NoTypeInformation
 .NOTES
 	20141119	K. Kirkpatrick
@@ -29,12 +33,12 @@
 		[+] Renamed from Get-HotFixStatus to Get-Patch
 		[+] Renamed -HotFixID to -PatchID
 		[+] Renamed variables and properties that used 'HotFix' to 'Patch'
-		[+] Added UptimeInDays to report uptime (Days)
+		[+] Added SystemUptimeDays to report uptime (Days)
 	20141126	K. Kirkpatrick
 		[+] Changed spacing
-	20141205	K. Kirkpatrick
-		[+] Renamed from Get-Patch to Get-WindowsPatch
-		[+] Renamed 'SystemName' to 'ComputerName' in output
+	20141211	K. Kirkpatrick
+		[+] minor change to comments and spacing
+		[+] Renamed UptimeInDays to SystemUptimeDays
 
 	#TAG:PUBLIC
 
@@ -58,74 +62,74 @@
 [cmdletbinding(DefaultParameterSetName = "Default")]
 param (
 	[parameter(Mandatory = $false,
-						 Position = 0,
-						 ValueFromPipeline = $true,
-						 ValueFromPipelineByPropertyName = $true)]
+			   Position = 0,
+			   ValueFromPipeline = $true,
+			   ValueFromPipelineByPropertyName = $true)]
 	[alias("Comp", "CN")]
 	[string[]]$ComputerName = "localhost",
 
 	[parameter(Mandatory = $true,
-						 Position = 1,
-						 ValueFromPipeline = $false,
-						 ValueFromPipelineByPropertyName = $false,
-						 HelpMessage = "Enter full patch (HotFix) ID (ex: KB1234567) ",
-						 ParameterSetName = "Default")]
+			   Position = 1,
+			   ValueFromPipeline = $false,
+			   ValueFromPipelineByPropertyName = $false,
+			   HelpMessage = "Enter full patch (HotFix) ID (ex: KB1234567) ",
+			   ParameterSetName = "Default")]
 	[alias("HotFix", "Patch")]
 	[validatepattern('^KB\d{7}$')]
 	[string]$PatchID,
 
 	[parameter(Mandatory = $false,
-						 ParameterSetName = "MostRecent")]
+			   ParameterSetName = "MostRecent")]
 	[switch]$MostRecent
 )
 
-BEGIN
-{
-	# Set global EA pref so that all errors are treated as terminating and get caught in the 'catch' block
+BEGIN {
+	<#
+	- Set global EA pref so that all errors are treated as terminating errors and get caught in the 'catch' block
+	- Define variables
+	- Define array of properties to pull from Get-HotFix command
+	#>
+
 	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
 
-	# define the final results array
 	$Results = @()
 
-	# define array of properties to pull from Get-HotFix command
 	$patchProperties = @(
 	"CSName",
 	"Description",
 	"HotFixID",
 	"InstalledOn",
 	"InstalledBy",
-	"Caption"
-	)
-
+	"Caption")
 }# BEGIN
 
-PROCESS
-{
-	foreach ($C in $ComputerName)
-	{
-		# Create counter variable and increment by 1 for each item in the collection
+PROCESS {
+	foreach ($C in $ComputerName) {
+		<#
+		- Increment by 1 for each item in the collection
+		- Call out variables and set/reset values
+		- If the system respons to ping, continue
+		#>
+
 		$i++
 
-		# Call out variables and set/reset values
 		$patchQuery = $null
 		$objPatch = @()
 		$uptimeQuery = $null
 		$calcUptime = $null
 		$uptime = $null
 
-		# If connectivity to remote system is successful, continue
-		if (Test-Connection $C -Count 2 -Quiet)
-		{
-			try
-			{
-				# gather uptime details on the destination system
+		if (Test-Connection $C -Count 2 -Quiet) {
+			try {
 				$uptimeQuery = Get-WmiObject -ComputerName $C -Class Win32_OperatingSystem -Property LastBootUpTime
 				$calcUptime = (Get-Date) - ($uptimeQuery.converttodatetime($uptimeQuery.LastBootUpTime))
 				$uptime = $calcUptime.Days
+			} catch {
+				<#
+				- Store data in obj for systems that are reachable but incur an error
+				- add data (obj) to finalResults array
+				#>
 
-			} catch
-			{
-				# Store data in obj for systems that are reachable but incur an error
 				$objPatch = [PSCustomObject] @{
 					ComputerName = $C.ToUpper()
 					Description = $null
@@ -133,27 +137,23 @@ PROCESS
 					InstalledBy = $null
 					InstalledOn = $null
 					Link = $null
-					UptimeInDays = $null
+					SystemUptimeDays = $null
 					Error = "Uptime Query Error: $_ "
 				}# objPatch
 
-				# add obj data to final results array
 				$Results += $objPatch
 
 			}# try/catch
 
-			if ($MostRecent)
-			{
-				try
-				{
-					Write-Verbose -Message "Searching for most recent patch on $($C.toupper())"
+			if ($MostRecent) {
+				try {
+					Write-Verbose -Message "Searching for most recent patch on $C.toupper()"
 
 					$patchQuery = (Get-HotFix -ComputerName $C -ErrorAction 'SilentlyContinue' |
 					Select-Object $patchProperties |
 					Where-Object { $_.InstalledOn -ne $null } |
 					Sort-Object InstalledOn -Descending)[0]
 
-					# Create obj for reachable systems
 					$objPatch = [PSCustomObject] @{
 						ComputerName = $C.ToUpper()
 						Description = $patchQuery.Description
@@ -161,18 +161,14 @@ PROCESS
 						InstalledBy = $patchQuery.InstalledBy
 						InstalledOn = $patchQuery.InstalledOn
 						Link = $patchQuery.Caption
-						UptimeInDays = if ($uptime -ne $null) { $uptime } else { $null }
+						SystemUptimeDays = if ($uptime -ne $null) { $uptime } else { $null }
 						Error = if ($patchQuery.HotFixID -eq $null) { "System reachable but errors may have been encountered collecting patch details" }
 					}# $objSvc
 
-					# add obj data to final results array
 					$Results += $objPatch
-
-				} catch
-				{
+				} catch {
 					Write-Warning -Message "$C - $_"
 
-					# Store data in obj for systems that are reachable but incur an error
 					$objPatch = [PSCustomObject] @{
 						ComputerName = $C.ToUpper()
 						Description = $null
@@ -180,26 +176,20 @@ PROCESS
 						InstalledBy = $null
 						InstalledOn = $null
 						Link = $null
-						UptimeInDays = $null
+						SystemUptimeDays = $null
 						Error = "Recent Patch Query Error: $_"
 					}# objPatch
 
-					# add obj data to final results array
 					$Results += $objPatch
-
 				}# try/catch
-
-			} else
-			{
-				try
-				{
+			} else {
+				try {
 					Write-Verbose -Message "Searching for patch $($PatchID.toupper()) on $($C.toupper())"
 
 					$patchQuery = Get-HotFix -Id $PatchID -ComputerName $C -ErrorAction 'SilentlyContinue' |
 					Select-Object $patchProperties |
 					Where-Object { $_.HotFixID -ne 'File 1' }
 
-					# Create obj for reachable systems
 					$objPatch = [PSCustomObject] @{
 						ComputerName = $C.ToUpper()
 						Description = $patchQuery.Description
@@ -207,18 +197,14 @@ PROCESS
 						InstalledBy = $patchQuery.InstalledBy
 						InstalledOn = $patchQuery.InstalledOn
 						Link = $patchQuery.Caption
-						UptimeInDays = if ($uptime -ne $null) { $uptime } else { $null }
+						SystemUptimeDays = if ($uptime -ne $null) { $uptime } else { $null }
 						Error = if ($patchQuery.HotFixID -eq $null) { "Patch $($PatchID.toupper()) does not appear to be installed" }
 					}# $objSvc
 
-					# add obj data to final results array
 					$Results += $objPatch
-
-				} catch
-				{
+				} catch {
 					Write-Warning -Message "$C - $_"
 
-					# Store data in obj for systems that are reachable but incur an error
 					$objPatch = [PSCustomObject] @{
 						ComputerName = $C.ToUpper()
 						Description = $null
@@ -226,21 +212,16 @@ PROCESS
 						InstalledBy = $null
 						InstalledOn = $null
 						Link = $null
-						UptimeInDays = $null
+						SystemUptimeDays = $null
 						Error = "Patch Query Error: $_"
 					}# objPatch
 
-					# add obj data to final results array
 					$Results += $objPatch
-
 				}# try/catch
 			}# if/else
-
-		} else
-		{
+		} else {
 			Write-Warning -Message "$C is unreachable"
 
-			# Capture unreachable systems and store the output in an object
 			$objPatch = [PSCustomObject] @{
 				ComputerName = $C.ToUpper()
 				Description = $null
@@ -248,27 +229,20 @@ PROCESS
 				InstalledBy = $null
 				InstalledOn = $null
 				Link = $null
-				UptimeInDays = $null
+				SystemUptimeDays = $null
 				Error = "$C is unreachable"
 			}# $objPatch
 
-			# add obj data to final results array
 			$Results += $objPatch
-
 		}# else
 
 		# Write total progress to progress bar
 		$TotalServers = $ComputerName.Length
 		$PercentComplete = [int](($i / $TotalServers) * 100)
 		Write-Progress -Activity "Working..." -CurrentOperation "$PercentComplete% Complete" -Status "Percent Complete" -PercentComplete $PercentComplete
-
 	}# foreach
-
 }# PROCESS
 
-END
-{
-	# Call the results object
+END {
 	$Results
-
 }# END
