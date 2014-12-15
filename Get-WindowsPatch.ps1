@@ -147,7 +147,7 @@ PROCESS {
 
 			if ($MostRecent) {
 				try {
-					Write-Verbose -Message "Searching for most recent patch on $C.toupper()"
+					Write-Verbose -Message "Searching for most recent patch on $($C.toupper())"
 
 					$patchQuery = (Get-HotFix -ComputerName $C -ErrorAction 'SilentlyContinue' |
 					Select-Object $patchProperties |
