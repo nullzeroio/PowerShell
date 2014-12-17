@@ -19,6 +19,11 @@
 
 	20141117	K. Kirkpatrick		[+] Created
 	20141118	K. Kirkpatrick		[+] ComputerName is no longer required; set the default to $(hostname)
+	20141216	K. Kirkpatrick		[+] Added new alias values for -ComputerName parameter
+									[+] Removed unnecessary collection variable
+	20141216	K. Kirkpatrick		[+] Added new alias values for -ComputerName parameter
+									[+] Removed unnecessary collection variable
+									[+] Changed default value of -ComputerName back to 'localhost'
 
 	#TAG:PUBLIC
 
@@ -44,43 +49,35 @@ param (
 			   ValueFromPipeline = $true,
 			   ValueFromPipelineByPropertyName = $true,
 			   Position = 0)]
-	[alias("Comp")]
-	[string[]]$ComputerName = "$(hostname)"
+	[alias('Comp', 'Name', 'DNSHostName')]
+	[string[]]$ComputerName = 'localhost'
 )
 
-BEGIN
-{
+BEGIN {
 	#Requires -Version 3
-
+	
 	$objResults = @()
-
-
+	
 	$SizeInGB = @{ Name = "SizeGB"; Expression = { "{0:N2}" -f ($_.Size/1GB) } }
 	$FreespaceInGB = @{ Name = "FreespaceGB"; Expression = { "{0:N2}" -f ($_.Freespace/1GB) } }
 	$PercentFree = @{ name = "PercentFree"; Expression = { [int](($_.FreeSpace/$_.Size) * 100) } }
-
+	
 }# BEGIN
 
-PROCESS
-{
-	foreach ($c in $ComputerName)
-	{
-		if (Test-Connection -ComputerName $c -Count 2 -Quiet)
-		{
-			try
-			{
+PROCESS {
+	foreach ($c in $ComputerName) {
+		if (Test-Connection -ComputerName $c -Count 2 -Quiet) {
+			try {
 				Write-Verbose -Message "Working on $c"
-
+				
 				$diskQuery = $null
-
+				
 				$diskQuery = Get-WmiObject -ComputerName $c -Query "SELECT SystemName,Caption,VolumeName,Size,Freespace,DriveType FROM win32_logicaldisk WHERE drivetype = 3" |
 				Select-Object SystemName, Caption, VolumeName, $SizeInGB, $FreespaceInGB, $PercentFree
-
-				foreach ($item in $diskQuery)
-				{
-					$colDiskInfo = @()
+				
+				foreach ($item in $diskQuery) {
 					$objDiskInfo = @()
-
+					
 					$objDiskInfo = [PSCustomObject] @{
 						SystemName = $item.SystemName
 						DriveLetter = $item.Caption
@@ -89,34 +86,30 @@ PROCESS
 						FreeSpaceGB = $item.FreeSpaceGB
 						PercentFree = $item.PercentFree
 					}# $objDiskInfo
-
-						# define custom type name
-					$objDiskinfo.PSTypeNames.Insert(0,'PSCustomObject.DiskSpace')
-
-					$colDiskInfo += $objDiskInfo
-					$objResults += $colDiskInfo
+					
+					# define custom type name
+					$objDiskinfo.PSTypeNames.Insert(0, 'PSCustomObject.DiskSpace')
+					
+					$objResults += $objDiskinfo
 				}# foreach
-
-			} catch
-			{
+				
+			} catch {
 				Write-Warning -Message "$c - $_"
 			}# try/catch
-
-		} else
-		{
+			
+		} else {
 			Write-Warning -Message "$c - Unreachable via Ping"
 		}# if/else
 	}# foreach
-
+	
 }# PROCESS
 
-END
-{
-
-	$defaultProperties = @('SystemName','DriveLetter','PercentFree')
-	$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’,[string[]]$defaultProperties)
+END {
+	
+	$defaultProperties = @('SystemName', 'DriveLetter', 'PercentFree')
+	$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’, [string[]]$defaultProperties)
 	$PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($defaultDisplayPropertySet)
 	$objResults | Add-Member MemberSet PSStandardMembers $PSStandardMembers
 	$objResults
-
+	
 }# END
