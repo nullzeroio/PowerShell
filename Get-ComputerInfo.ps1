@@ -10,8 +10,7 @@
 .INPUTS
 	System.String
 .OUTPUTS
-
-
+	System.Management.Automation.PSCustomObject
 .EXAMPLE
 	.\Get-ComputerInfo.ps1
 .EXAMPLE
