@@ -1,4 +1,4 @@
-﻿<#
+<#
 	.SYNOPSIS
 		Get all AD computers running a supplied operating system in the specified domain.
 	.DESCRIPTION

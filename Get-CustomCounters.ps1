@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 	Collect pre-defined performance counters from a local or remote system.
 .DESCRIPTION
@@ -30,9 +30,9 @@
 	20140925	K. Kirkpatrick		Created
 
 
-	GitHub:	 https://github.com/vN3rd
-	Twitter:  @vN3rd
-	Email:	 kevin@pinelabs.co
+	GitHub:	 https://github.com/vScripter
+	Twitter:  @vScripter
+	Email:	 kevin@vMotioned.com
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Get Windows Disk Space Details
 .DESCRIPTION
@@ -55,7 +55,7 @@ Output warning when a server that does not support WSMAN is supplied
  my GitHub page. Thanks for your support!
 [-------------------------------------DISCLAIMER-------------------------------------]
 .LINK
-    https://github.com/vN3rd
+    https://github.com/vScripter
 #>
 
 [cmdletbinding(PositionalBinding = $true,

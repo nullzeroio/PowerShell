@@ -23,7 +23,7 @@
  my GitHub page. Thanks for your support!
 [-------------------------------------DISCLAIMER-------------------------------------]
 .LINK
-	https://github.com/vN3rd
+	https://github.com/vScripter
 .LINK
 	http://blogs.vmware.com/PowerCLI/2011/06/how-to-speed-up-the-execution-of-the-first-powercli-cmdlet.html
 #>

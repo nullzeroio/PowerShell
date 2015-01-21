@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 	Lists basic Computer/Server information from WMI queries.
 .DESCRIPTION
@@ -24,9 +24,9 @@
 
 	#TAG:PUBLIC
 	
-	GitHub:	 https://github.com/vN3rd
-	Twitter:  @vN3rd
-	Email:	 kevin@pinelabs.co
+	GitHub:	 https://github.com/vScripter
+	Twitter:  @vScripter
+	Email:	 kevin@vMotioned.com
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
@@ -39,7 +39,7 @@
 [-------------------------------------DISCLAIMER-------------------------------------]
 
 .LINK
-	https://github.com/vN3rd
+	https://github.com/vScripter
 .LINK
 about_WMI
 .LINK

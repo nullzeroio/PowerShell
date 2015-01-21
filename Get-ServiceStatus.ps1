@@ -1,4 +1,4 @@
-﻿<#
+<#
 	.SYNOPSIS
 		Get the status of a given service on a given computer or multiple computers with enhanced error handling
 	.DESCRIPTION

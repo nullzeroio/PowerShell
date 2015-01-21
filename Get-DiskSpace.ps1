@@ -1,4 +1,4 @@
-ï»¿<#
+<#
 .SYNOPSIS
 	Return disk partition space details for a single or multiple computers
 .DESCRIPTION
@@ -27,9 +27,9 @@
 
 	#TAG:PUBLIC
 
-	GitHub:	 https://github.com/vN3rd
-	Twitter:  @vN3rd
-	Email:	 kevin@pinelabs.co
+	GitHub:	 https://github.com/vScripter
+	Twitter:  @vScripter
+	Email:	 kevin@vMotioned.com
 
 [-------------------------------------DISCLAIMER-------------------------------------]
 	All script are provided as-is with no implicit
@@ -55,13 +55,13 @@ param (
 
 BEGIN {
 	#Requires -Version 3
-	
+
 	$objResults = @()
-	
+
 	$SizeInGB = @{ Name = "SizeGB"; Expression = { "{0:N2}" -f ($_.Size/1GB) } }
 	$FreespaceInGB = @{ Name = "FreespaceGB"; Expression = { "{0:N2}" -f ($_.Freespace/1GB) } }
 	$PercentFree = @{ name = "PercentFree"; Expression = { [int](($_.FreeSpace/$_.Size) * 100) } }
-	
+
 }# BEGIN
 
 PROCESS {
@@ -69,15 +69,15 @@ PROCESS {
 		if (Test-Connection -ComputerName $c -Count 2 -Quiet) {
 			try {
 				Write-Verbose -Message "Working on $c"
-				
+
 				$diskQuery = $null
-				
+
 				$diskQuery = Get-WmiObject -ComputerName $c -Query "SELECT SystemName,Caption,VolumeName,Size,Freespace,DriveType FROM win32_logicaldisk WHERE drivetype = 3" |
 				Select-Object SystemName, Caption, VolumeName, $SizeInGB, $FreespaceInGB, $PercentFree
-				
+
 				foreach ($item in $diskQuery) {
 					$objDiskInfo = @()
-					
+
 					$objDiskInfo = [PSCustomObject] @{
 						SystemName = $item.SystemName
 						DriveLetter = $item.Caption
@@ -86,30 +86,30 @@ PROCESS {
 						FreeSpaceGB = $item.FreeSpaceGB
 						PercentFree = $item.PercentFree
 					}# $objDiskInfo
-					
+
 					# define custom type name
 					$objDiskinfo.PSTypeNames.Insert(0, 'PSCustomObject.DiskSpace')
-					
+
 					$objResults += $objDiskinfo
 				}# foreach
-				
+
 			} catch {
 				Write-Warning -Message "$c - $_"
 			}# try/catch
-			
+
 		} else {
 			Write-Warning -Message "$c - Unreachable via Ping"
 		}# if/else
 	}# foreach
-	
+
 }# PROCESS
 
 END {
-	
+
 	$defaultProperties = @('SystemName', 'DriveLetter', 'PercentFree')
-	$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(â€˜DefaultDisplayPropertySetâ€™, [string[]]$defaultProperties)
+	$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’, [string[]]$defaultProperties)
 	$PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($defaultDisplayPropertySet)
 	$objResults | Add-Member MemberSet PSStandardMembers $PSStandardMembers
 	$objResults
-	
+
 }# END
