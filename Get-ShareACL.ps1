@@ -1,4 +1,4 @@
-﻿<#
+<#
 	.SYNOPSIS
 		Returns NTFS and Share permissions for a provided UNC Path
 
@@ -27,9 +27,9 @@
 
 	TAG:PUBLIC
 	
-	GitHub:	 https://github.com/vN3rd
-	Twitter:  @vN3rd
-	Email:	 kevin@pinelabs.co
+	GitHub:	 https://github.com/vScripter
+	Twitter:  @vScripter
+	Email:	 kevin@vMotioned.com
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit

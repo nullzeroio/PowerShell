@@ -1,4 +1,4 @@
-﻿<#
+<#
 	.SYNOPSIS
 		Returns information about the Processor via WMI.
 
@@ -41,7 +41,7 @@
 		TAG:PUBLIC
 
 	.LINK
-		https://github.com/vN3rd/PowerShell-Scripts
+		https://github.com/vScripter/PowerShell-Scripts
 
 	.LINK
 		about_WMi

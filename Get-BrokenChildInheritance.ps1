@@ -1,4 +1,4 @@
-﻿#========================================================================
+#========================================================================
 # Created with: SAPIEN Technologies, Inc., PowerShell Studio 2012 v3.1.29
 # Created on:   2/2/2014 11:06 AM
 # Created by:   Steven Slocum & Kevin Kirkpatrick

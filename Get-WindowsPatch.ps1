@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 	Search a computer/s for the install status of a particular Microsoft HotFix (Patch)
 .DESCRIPTION
@@ -42,9 +42,9 @@
 
 	#TAG:PUBLIC
 
-	GitHub:	 https://github.com/vN3rd
-	Twitter:  @vN3rd
-	Email:	 kevin@pinelabs.co
+	GitHub:	 https://github.com/vScripter
+	Twitter:  @vScripter
+	Email:	 kevin@vMotioned.com
 
 [-------------------------------------DISCLAIMER-------------------------------------]
  All script are provided as-is with no implicit
