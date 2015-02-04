@@ -33,9 +33,7 @@
 [cmdletbinding(PositionalBinding = $true)]
 param (
 	[parameter(Mandatory = $true,
-			   Position = 0,
-			   ValueFromPipeline = $true,
-			   ValueFromPipelineByPropertyName = $true)]
+			   Position = 0)]
 	[alias('Filer')]
 	[string[]]$Controller
 )
@@ -43,48 +41,38 @@ param (
 BEGIN
 {
 	Set-StrictMode -Version Latest
-	# force all errors to be terminating for better error handling in try/catch blocks
-	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-	# set/assign final results array
-	$colFinalResults = @()
-
+	
 	# define custom hash tables
 	$totalSize = @{ Label = 'TotalSize'; Expression = { ConvertTo-FormattedNumber $_.SizeTotal DataSize "0.0" } }
 	$available = @{ Label = 'AvailableSpace'; Expression = { ConvertTo-FormattedNumber $_.SizeAvailable DataSize "0.0" } }
 	$used = @{ Label = 'PercentUsed'; Expression = { ConvertTo-FormattedNumber $_.SizePercentageUsed Percent } }
 
-}# BEGIN
+} # BEGIN
 
 PROCESS
 {
 	foreach ($system in $Controller)
 	{
 		Write-Verbose -Message "Working on $($system.toupper())"
-
+		
+		# set/clear variables on each interation
+		$aggrQuery = $null
+		$versionQuery = $null
+		$ontapSupported = $null
+		$connectController = $null
+		
 		if (Test-Connection -ComputerName $system -Count 2 -Quiet)
 		{
 			try
 			{
-				# set/clear variables on each interation
-				$aggrQuery = $null
-				$versionQuery = $null
-				$ontapSupported = $null
-				$connectController = $null
-
-
-				# turn off verbose messages while DataONTAP commands are running to keep the console messages clean if -Verbose is specified
-				$VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
-
+				
 				# query for the volume details
-				$aggrQuery = Get-NAAggr -Controller (Connect-NaController $system) |
+				$aggrQuery = Get-NAAggr -Controller (Connect-NaController $system) -ErrorAction 'Stop' |
 				Select-Object Name, State, $totalSize, $used, $available, Disks, RaidType, MirrorStatus
 
 				# interate through each volume
 				foreach ($aggregate in $aggrQuery)
 				{
-
-					# set/clear on each interation
-					$colVol = @()
 					$objVol = @()
 
 					# create custom obj to store data
@@ -97,31 +85,26 @@ PROCESS
 						DiskCount = $aggregate.Disks
 						RaidType = $aggregate.RaidType
 						MirrorStatus = $aggregate.MirrorStatus
-					}# $objAggr
+					} # $objAggr
 
-					# store obj results in final array
-					$colFinalResults += $objAggr
+					$objAggr
 
-				}# foreach
-
-				# turn verbose messages back on
-				$VerbosePreference = [System.Management.Automation.ActionPreference]::Continue
+				} # foreach
 
 			} catch
 			{
 				Write-Warning -Message "$system - $_"
-			}# try/catch
+			} # try/catch
 
 		} else
 		{
 			Write-Warning -Message "$system - Unreachable"
-		}# if/else
-	}# foreach
-}# PROCESS
+		} # if/else
+	} # foreach
+	
+} # PROCESS
 
 END
 {
-	$colFinalResults
-
 	Write-Verbose -Message "Done"
-}# END
+} # END
