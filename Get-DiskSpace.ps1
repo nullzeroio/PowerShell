@@ -50,34 +50,31 @@ param (
 			   ValueFromPipelineByPropertyName = $true,
 			   Position = 0)]
 	[alias('Comp', 'Name', 'DNSHostName')]
-	[string[]]$ComputerName = 'localhost'
+	[string[]]$ComputerName = "$ENV:COMPUTERNAME"
 )
 
 BEGIN {
 	#Requires -Version 3
 
-	$objResults = @()
-
-	$SizeInGB = @{ Name = "SizeGB"; Expression = { "{0:N2}" -f ($_.Size/1GB) } }
-	$FreespaceInGB = @{ Name = "FreespaceGB"; Expression = { "{0:N2}" -f ($_.Freespace/1GB) } }
+	$SizeInGB = @{ Name = "SizeGB"; Expression = { [int]("{0:N2}" -f ($_.Size/1GB)) } }
+	$FreespaceInGB = @{ Name = "FreespaceGB"; Expression = { [int]("{0:N2}" -f ($_.Freespace/1GB)) } }
 	$PercentFree = @{ name = "PercentFree"; Expression = { [int](($_.FreeSpace/$_.Size) * 100) } }
 
-}# BEGIN
+} # BEGIN
 
 PROCESS {
+	
 	foreach ($c in $ComputerName) {
 		if (Test-Connection -ComputerName $c -Count 2 -Quiet) {
 			try {
 				Write-Verbose -Message "Working on $c"
 
 				$diskQuery = $null
-
-				$diskQuery = Get-WmiObject -ComputerName $c -Query "SELECT SystemName,Caption,VolumeName,Size,Freespace,DriveType FROM win32_logicaldisk WHERE drivetype = 3" |
+				$diskQuery = Get-WmiObject -ComputerName $c -Query "SELECT SystemName,Caption,VolumeName,Size,Freespace,DriveType FROM win32_logicaldisk WHERE drivetype = 3" -ErrorAction 'Stop' |
 				Select-Object SystemName, Caption, VolumeName, $SizeInGB, $FreespaceInGB, $PercentFree
 
 				foreach ($item in $diskQuery) {
 					$objDiskInfo = @()
-
 					$objDiskInfo = [PSCustomObject] @{
 						SystemName = $item.SystemName
 						DriveLetter = $item.Caption
@@ -85,31 +82,32 @@ PROCESS {
 						SizeGB = $item.SizeGB
 						FreeSpaceGB = $item.FreeSpaceGB
 						PercentFree = $item.PercentFree
-					}# $objDiskInfo
+					} # $objDiskInfo
 
 					# define custom type name
 					$objDiskinfo.PSTypeNames.Insert(0, 'PSCustomObject.DiskSpace')
-
-					$objResults += $objDiskinfo
-				}# foreach
+					
+					# assigned custom type name to output
+					$defaultProperties = @('SystemName', 'DriveLetter', 'PercentFree')
+					$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’, [string[]]$defaultProperties)
+					$PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($defaultDisplayPropertySet)
+					$objDiskinfo | Add-Member MemberSet PSStandardMembers $PSStandardMembers
+					$objDiskinfo
+				} # foreach
 
 			} catch {
 				Write-Warning -Message "$c - $_"
-			}# try/catch
+			} # try/catch
 
 		} else {
 			Write-Warning -Message "$c - Unreachable via Ping"
-		}# if/else
-	}# foreach
+		} # if/else
+	} # foreach
 
-}# PROCESS
+} # PROCESS
 
 END {
 
-	$defaultProperties = @('SystemName', 'DriveLetter', 'PercentFree')
-	$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’, [string[]]$defaultProperties)
-	$PSStandardMembers = [System.Management.Automation.PSMemberInfo[]]@($defaultDisplayPropertySet)
-	$objResults | Add-Member MemberSet PSStandardMembers $PSStandardMembers
-	$objResults
+	Write-Verbose -Message 'Done'
 
-}# END
+} # END
