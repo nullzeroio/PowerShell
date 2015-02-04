@@ -93,21 +93,14 @@ AggrSize              : 22 TB
 [cmdletbinding(PositionalBinding = $true)]
 param (
 	[parameter(Mandatory = $true,
-			   Position = 0,
-			   ValueFromPipeline = $true,
-			   ValueFromPipelineByPropertyName = $true)]
+			   Position = 0)]
 	[alias('Filer')]
 	[string[]]$Controller
 )
 
-BEGIN
-{
+BEGIN {
 	Set-StrictMode -Version Latest
-	# force all errors to be terminating for better error handling in try/catch blocks
-	$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-	# set/assign final results array
-	$colFinalResults = @()
-
+	
 	# define custom hash tables
 	$totalSize = @{ Label = 'TotalSize'; Expression = { ConvertTo-FormattedNumber $_.SizeTotal DataSize "0.0" } }
 	$available = @{ Label = 'AvailableSpace'; Expression = { ConvertTo-FormattedNumber $_.SizeAvailable DataSize "0.0" } }
@@ -118,50 +111,37 @@ BEGIN
 	$volumeDataFootPrint = @{ Label = 'VolDataFootPrint'; Expression = { ConvertTo-FormattedNumber $_.VolumeDataFootprint DataSize } }
 	$flexVolMetaDataFootPrint = @{ Label = 'FlexvolMetadataFootprint'; Expression = { ConvertTo-FormattedNumber $_.FlexvolMetadataFootprint DataSize } }
 	$aggregateSize = @{ Label = 'AggregateSize'; Expression = { ConvertTo-FormattedNumber $_.AggregateSize DataSize } }
+	
+} # BEGIN
 
-}# BEGIN
-
-PROCESS
-{
-	foreach ($system in $Controller)
-	{
+PROCESS {
+	foreach ($system in $Controller) {
 		Write-Verbose -Message "Working on $($system.toupper())"
-
-		if (Test-Connection -ComputerName $system -Count 2 -Quiet)
-		{
-			try
-			{
-				# set/clear variables on each interation
-				$volQuery = $null
-				$versionQuery = $null
-				$ontapSupported = $null
-				$connectController = $null
-
-
-				# turn off verbose messages while DataONTAP commands are running to keep the console messages clean if -Verbose is specified
-				$VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
-
+		
+		# set/clear variables on each interation
+		$volQuery = $null
+		$versionQuery = $null
+		$ontapSupported = $null
+		$connectController = $null
+		
+		if (Test-Connection -ComputerName $system -Count 2 -Quiet) {
+			try {
 				# query for the volume details
-				$volQuery = Get-NAVol -Controller (Connect-NaController $system) |
+				$volQuery = Get-NAVol -Controller (Connect-NaController $system) -ErrorAction 'Stop' |
 				Select-Object OwningVfiler, Name, State, $totalSize, $used, $available, Dedupe, $filesUsed, $filesTotal, ContainingAggregate
-
+				
 				# Grab the version of Data ONTAP; versions older than 8.2 do not support the 'volume-footprint-list-info-iter-start' API; assign a boolean value for later use
-				if ($(Get-NaSystemVersion -Controller (Connect-NaController $system)) -like '*8.2*')
-				{
+				if ($(Get-NaSystemVersion -Controller (Connect-NaController $system)) -like '*8.2*') {
 					$ontapSupported = $true
-				} else
-				{
+				} else {
 					$ontapSupported = $false
-				}# if/else
-
+				} # if/else
+				
 				# interate through each volume
-				foreach ($vol in $volQuery)
-				{
-
-					# set/clear on each interation
-					$colVol = @()
+				foreach ($vol in $volQuery) {
+					
 					$objVol = @()
-
+					
 					# create custom obj to store data
 					$objVol = [PSCustomObject] @{
 						Controller = $(($global:CurrentNaController.name.toupper()))
@@ -171,63 +151,48 @@ PROCESS
 						Available = $vol.AvailableSpace
 						VolState = $vol.State
 						Dedupe = $vol.Dedupe
-						TotalFootPrint = if ($ontapSupported)
-						{
+						TotalFootPrint = if ($ontapSupported) {
 							$(ConvertTo-FormattedNumber -Value $((Get-NaVolFootprint -Controller (Connect-NaController $system) -Name $($vol.name)).TotalFootPrint) -Type DataSize)
-						} else
-						{
+						} else {
 							"N/A"
 						}
-						VolDataFootPrint = if ($ontapSupported)
-						{
+						VolDataFootPrint = if ($ontapSupported) {
 							$(ConvertTo-FormattedNumber -Value $((Get-NaVolFootprint -Controller (Connect-NaController $system) -Name $($vol.name)).VolumeDataFootPrint) -Type DataSize)
-						} else
-						{
+						} else {
 							"N/A"
 						}
-						VolGuaranteeFootPrint = if ($ontapSupported)
-						{
+						VolGuaranteeFootPrint = if ($ontapSupported) {
 							$(ConvertTo-FormattedNumber -Value $((Get-NaVolFootprint -Controller (Connect-NaController $system) -Name $($vol.name)).VolumeGuaranteeFootPrint) -Type DataSize)
-						} else
-						{
+						} else {
 							"N/A"
 						}
 						FilesUsed = $vol.FilesUsed
 						FilesTotal = $vol.FilesTotal
 						vFiler = $vol.OwningvFiler
 						Aggr = $vol.ContainingAggregate
-						AggrSize = if ($ontapSupported)
-						{
+						AggrSize = if ($ontapSupported) {
 							$(ConvertTo-FormattedNumber -Value $((Get-NaVolFootprint -Controller (Connect-NaController $system) -Name $($vol.name)).AggregateSize) -Type DataSize)
-						} else
-						{
+						} else {
 							"N/A"
 						}
-					}# $objVol
-
-					# store obj results in final array
-					$colFinalResults += $objVol
-
-				}# foreach
-
-				# turn verbose messages back on
-				$VerbosePreference = [System.Management.Automation.ActionPreference]::Continue
-
-			} catch
-			{
+					} # $objVol
+					
+					# call obj
+					$objVol
+					
+				} # foreach
+				
+			} catch {
 				Write-Warning -Message "$system - $_"
-			}# try/catch
-
-		} else
-		{
+			} # try/catch
+			
+		} else {
 			Write-Warning -Message "$system - Unreachable"
-		}# if/else
-	}# foreach
-}# PROCESS
+		} # if/else
+	} # foreach
+	
+} # PROCESS
 
-END
-{
-	$colFinalResults
-
+END {
 	Write-Verbose -Message "Done"
-}# END
+} # END
