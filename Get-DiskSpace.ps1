@@ -16,14 +16,11 @@
 .EXAMPLE
 	.\Get-DiskSpace.ps1 -ComputerName (Get-Content C:\ServerList.txt) -Verbose | Where-Object {$_.PercentFree -lt 10} | Export-Csv C:\LowDiskSpaceReport.csv -NoTypeInformation
 .NOTES
-
-	20141117	K. Kirkpatrick		[+] Created
-	20141118	K. Kirkpatrick		[+] ComputerName is no longer required; set the default to $(hostname)
-	20141216	K. Kirkpatrick		[+] Added new alias values for -ComputerName parameter
-									[+] Removed unnecessary collection variable
-	20141216	K. Kirkpatrick		[+] Added new alias values for -ComputerName parameter
-									[+] Removed unnecessary collection variable
-									[+] Changed default value of -ComputerName back to 'localhost'
+	20150204	K. Kirkpatrick
+	[x] Default value for -ComputerName param is now $ENV:COMPUTERNAME
+	[x] type casted output as [int] for space detail
+	[x] Removed redundant array variable; objects now passed straight to the pipeline
+	[x] General syntax cleanup
 
 	#TAG:PUBLIC
 
@@ -63,7 +60,7 @@ BEGIN {
 } # BEGIN
 
 PROCESS {
-	
+
 	foreach ($c in $ComputerName) {
 		if (Test-Connection -ComputerName $c -Count 2 -Quiet) {
 			try {
@@ -86,7 +83,7 @@ PROCESS {
 
 					# define custom type name
 					$objDiskinfo.PSTypeNames.Insert(0, 'PSCustomObject.DiskSpace')
-					
+
 					# assigned custom type name to output
 					$defaultProperties = @('SystemName', 'DriveLetter', 'PercentFree')
 					$defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet(‘DefaultDisplayPropertySet’, [string[]]$defaultProperties)
