@@ -17,23 +17,19 @@
 .INPUTS
 	System.String
 .EXAMPLE
-	./Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins'
+	.\Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins'
 .EXAMPLE
-	./Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins' -IncludeUniqueMembersReport
+	.\Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins' -IncludeUniqueMembersReport
 .EXAMPLE
-	./Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins' -IncludeUniqueMembersReport -Verbose
-	C:\PS> ./Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins' -Verbose
-	C:\PS> ./Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORPA\Domain Admins','CORPB\Domain Admins'
-	C:\PS> ./Get-ADRecursiveGroupMembership.ps1 -GroupName (Get-Content C:\ADGroupMembershipList.txt) -IncludeUniqueMembersReport
+	.\Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins' -IncludeUniqueMembersReport -Verbose
+	C:\PS> .\Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORP\Domain Admins' -Verbose
+	C:\PS> .\Get-ADRecursiveGroupMembership.ps1 -GroupName 'CORPA\Domain Admins','CORPB\Domain Admins'
+	C:\PS> .\Get-ADRecursiveGroupMembership.ps1 -GroupName (Get-Content C:\ADGroupMembershipList.txt) -IncludeUniqueMembersReport
 .LINK
 
 .NOTES
-	20141104 	K. Kirkpatrick
-	[+] Created
-	20141114	K. Kirkpatrick		
-	[+] Upated CBH
-	20141205	K. Kirkpatrick
-	[+] Modified how the domain is parsed from the group name provided
+	20150204 	K. Kirkpatrick
+	[+] Minor syntax updates
 
 	TO-DO
 	[ ] Consolidate down to only using the Quest AD PSSnapin, or convert everything to native MSFT AD PowerShell Module
