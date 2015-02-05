@@ -20,7 +20,11 @@
 .Example
 	.\Get-ComputerInfo.ps1 -Computer (Get-Content C:\ListOfComputers.txt)
 .NOTES
-
+	20150204	K. Kirkpatrick
+	[+] Removed redundant array that stored all obj data until the end; objects now get thrown straight to the pipeline
+	[+] Change default value of -ComputerName param from 'localhost' to "$ENV:COMPUTERNAME"
+	[+] Renamed $c variable to $computer
+	[+] Misc. syntax cleanup
 
 	#TAG:PUBLIC
 	
@@ -41,28 +45,28 @@
 .LINK
 	https://github.com/vScripter
 .LINK
-about_WMI
+	about_WMI
 .LINK
-about_Wmi_Cmdlets
-
+	about_Wmi_Cmdlets
 #>
 
 
 [CmdletBinding()]
 param (
-	[Parameter(Position = 0, Mandatory = $false)]
-	[System.string[]] $ComputerName = 'localhost'
+	[Parameter(Position = 0,
+			   Mandatory = $false)]
+	[System.string[]] $ComputerName = "$ENV:COMPUTERNAME"
 )
 
 BEGIN {
-	#Set-StrictMode -Version Latest
 	
-	$objFinalResults = @()
-
-} # end BEGIN
+	Set-StrictMode -Version Latest	
+	
+} # end BEGIN block
 
 PROCESS {
-	foreach ($C in $ComputerName) {
+	
+	foreach ($computer in $ComputerName) {
 		
 		$objComputer = @()
 		$wmiWin32CompSys = $null
@@ -79,22 +83,27 @@ PROCESS {
 		$ComputerIPv4 = $null
 		$UptimeData = $null
 		
-		if (Test-Connection $C -Count 2 -Quiet) {
+		if (Test-Connection $computer -Count 2 -Quiet) {
 			try {
-				Write-Verbose -Message "Working on $C..."
+				Write-Verbose -Message "Working on $computer..."
 				
-				$wmiWin32CompSys = Get-WmiObject -Query "SELECT Caption,Domain,Model FROM win32_computersystem" -ComputerName $C
-				$wmiWin32OpSys = Get-WmiObject -Query "SELECT LastBootupTime,Description,Caption,ServicePackMajorVersion FROM Win32_operatingsystem" -ComputerName $C
-				$wmiWin32BIOS = Get-WmiObject -Query "SELECT Manufacturer,SerialNumber FROM win32_BIOS" -ComputerName $C
-				$wmiWin32SysEncl = Get-WmiObject -Query "SELECT SMBIOSAssetTag FROM win32_SystemEnclosure" -ComputerName $C
-				$wmiHPQiloVersion = Get-WmiObject -Query "SELECT Caption FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $C -ErrorAction 'SilentlyContinue'
-				$wmiHPQiloIPAddress = Get-WmiObject -Query "SELECT IPAddress FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $C -ErrorAction 'SilentlyContinue'
-				$wmiHPQiloHostname = Get-WmiObject -Query "SELECT HostName FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $C -ErrorAction 'SilentlyContinue'
-				$wmiHPQiloLicenseKey = Get-WmiObject -Query "SELECT LicenseKey FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $C -ErrorAction 'SilentlyContinue'
-				$NBUVersionFilePath = Get-Content "\\$C\c$\Program Files\veritas\netbackup\version.txt" -ErrorAction 'SilentlyContinue'
-				$NBUVersion = $NBUVersionFilePath | Out-String
-				$ComputerShortName = $wmiWin32CompSys.Caption
-				$ComputerIPv4 = Get-WmiObject -Query "SELECT IPEnabled,IPAddress,IPSubnet,DefaultIPGateway,DNSServerSearchOrder FROM Win32_NetworkAdapterConfiguration" -ComputerName $C | Where-Object { $_.IPEnabled -eq $true }
+				$wmiWin32CompSys = Get-WmiObject -Query "SELECT Name,Domain,Model FROM win32_computersystem" -ComputerName $computer
+				$wmiWin32OpSys = Get-WmiObject -Query "SELECT LastBootupTime,Description,Caption,ServicePackMajorVersion FROM Win32_operatingsystem" -ComputerName $computer
+				$wmiWin32BIOS = Get-WmiObject -Query "SELECT Manufacturer,SerialNumber FROM win32_BIOS" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$wmiWin32SysEncl = Get-WmiObject -Query "SELECT SMBIOSAssetTag FROM win32_SystemEnclosure" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$wmiHPQiloVersion = Get-WmiObject -Query "SELECT Caption FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$wmiHPQiloIPAddress = Get-WmiObject -Query "SELECT IPAddress FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$wmiHPQiloHostname = Get-WmiObject -Query "SELECT HostName FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$wmiHPQiloLicenseKey = Get-WmiObject -Query "SELECT LicenseKey FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$NBUVersionFilePath = Get-Content "\\$computer\c$\Program Files\veritas\netbackup\version.txt" -ErrorAction 'SilentlyContinue'
+				if ($NBUVersionFilePath) {
+					$NBUVersion = $NBUVersionFilePath | Out-String
+					$NBUVersion = $NBUVersion.split()[6]
+				} else {
+					$NBUVersion = 'N/A'
+				} # end if/else $NBUVersionFilePath
+				$ComputerShortName = $wmiWin32CompSys.Name
+				$ComputerIPv4 = Get-WmiObject -Query "SELECT IPEnabled,IPAddress,IPSubnet,DefaultIPGateway,DNSServerSearchOrder FROM Win32_NetworkAdapterConfiguration" -ComputerName $computer | Where-Object { $_.IPEnabled -eq $true }
 				$UptimeData = (get-date) - $wmiWin32OpSys.converttodatetime($wmiWin32OpSys.lastbootuptime)
 				
 				$objComputer = [PSCustomObject] @{
@@ -113,23 +122,23 @@ PROCESS {
 					Manufacturer = $wmiWin32BIOS.Manufacturer
 					SerialNumber = $wmiWin32BIOS.SerialNumber
 					AssetTag = $wmiWin32SysEncl.SMBIOSAssetTag
-					NetBackupClientVersion = $NBUVersion.split()[6]
-					iLOVersion = $wmiHPQiloVersion.Caption
-					iLOIPAddress = $wmiHPQiloIPAddress.IPAddress
-					iLOHostname = $wmiHPQiloHostname.Hostname
-					iLOLicenseKey = $wmiHPQiloLicenseKey.LicenseKey
+					NetBackupClientVersion = $NBUVersion
+					iLOVersion = if ($wmiHPQiloVersion) { $wmiHPQiloVersion.Caption } else { 'N/A' }
+					iLOIPAddress = if ($wmiHPQiloIPAddress) { $wmiHPQiloIPAddress.IPAddress } else { 'N/A' }
+					iLOHostname = if ($wmiHPQiloHostname) { $wmiHPQiloHostname.Hostname } else { 'N/A' }
+					iLOLicenseKey = if ($wmiHPQiloLicenseKey) { $wmiHPQiloLicenseKey.LicenseKey } else { 'N/A' }
 					Ping = 'Up'
 					Error = $null
 				} # end $ObjComptuer
 				
-				$objFinalResults += $objComputer
+				$objComputer
 			} # end try
 			
 			catch {
-				Write-Warning -Message "Error querying WMI on $C : $_"
+				Write-Warning -Message "Error querying WMI on $computer : $_"
 				
 				$objComputer = [PSCustomObject] @{
-					ComputerName = $C
+					ComputerName = $computer
 					Domain = $null
 					IPAddress = $null
 					SubnetMask = $null
@@ -153,13 +162,13 @@ PROCESS {
 					Error = "Error querying WMI : $_"
 				} # end $ObjComptuer
 				
-				$objFinalResults += $objComputer
+				$objComputer
 			} # end catch
 		} else {
-			Write-Warning -Message "$C is unreachable"
+			Write-Warning -Message "$computer is unreachable"
 			
 			$objComputer = [PSCustomObject] @{
-				ComputerName = $C
+				ComputerName = $computer
 				Domain = $null
 				IPAddress = $null
 				SubnetMask = $null
@@ -183,13 +192,12 @@ PROCESS {
 				Error = 'Unreachable by ICMP (ping)'
 			} # end $ObjComptuer
 			
-			$objFinalResults += $objComputer
-			#>
+			$objComputer			
 		} # end else
 	} # end foreach
 	
 } # end PROCESS
 
 END {
-	$objFinalResults
+	
 } # end END
