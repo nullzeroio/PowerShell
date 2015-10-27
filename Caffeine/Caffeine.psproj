@@ -1,0 +1,10 @@
+﻿<Project>
+  <Version>1</Version>
+  <FileID>d7ab5c79-5e9f-4a46-9116-510f4f04f257</FileID>
+  <ProjectType>0</ProjectType>
+  <Files>
+    <File ReferenceName="" Build="0">Startup.pss</File>
+    <File ReferenceName="Call-MainForm_psf" Build="0">MainForm.psf</File>
+    <File ReferenceName="Call-Global_ps1" Build="0" CommandExtension="True">Globals.ps1</File>
+  </Files>
+</Project>
