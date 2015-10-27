@@ -1,0 +1,80 @@
+﻿<File>
+  <FileID></FileID>
+  <FileVersion>2.0</FileVersion>
+  <Object type="System.Windows.Forms.Form, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" name="MainForm" children="Controls">
+    <Property name="Text">Main Form</Property>
+    <Property name="Name">MainForm</Property>
+    <Property name="StartPosition">CenterScreen</Property>
+    <Property name="DataBindings">
+      <Property name="DefaultDataSourceUpdateMode">OnValidation</Property>
+    </Property>
+    <Property name="ClientSize">292, 266</Property>
+    <Event name="Load">MainForm_Load</Event>
+  </Object>
+  <Mode>0</Mode>
+  <Assemblies>
+    <Assembly>System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Assembly>
+    <Assembly>System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35</Assembly>
+    <Assembly>System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Assembly>
+    <Assembly>System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+    <Assembly>mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Assembly>
+    <Assembly>System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Assembly>
+    <Assembly>System.Xml, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Assembly>
+    <Assembly>System.DirectoryServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+  </Assemblies>
+  <Packager>
+    <General>
+      <PackageName>
+      </PackageName>
+      <PackageIcon>
+      </PackageIcon>
+      <ManifestCreation>1</ManifestCreation>
+      <CustomManifest>
+      </CustomManifest>
+      <DeleteDataFiles>0</DeleteDataFiles>
+      <Platform>-1</Platform>
+      <RunSTA>0</RunSTA>
+    </General>
+    <Security>
+      <Username>
+      </Username>
+      <Password>
+      </Password>
+      <SignPackage>False</SignPackage>
+      <Certificate>
+      </Certificate>
+      <CertificatePassword>
+      </CertificatePassword>
+    </Security>
+    <Version>
+      <FileVersion>
+      </FileVersion>
+      <ProductVersion>
+      </ProductVersion>
+      <ProductName>
+      </ProductName>
+      <Description>
+      </Description>
+      <Company>
+      </Company>
+      <Copyright>
+      </Copyright>
+      <InternalName>
+      </InternalName>
+      <OriginalFileName>
+      </OriginalFileName>
+      <Comment>
+      </Comment>
+    </Version>
+  </Packager>
+  <Code><![CDATA[
+$MainForm_Load={
+#TODO: Initialize Form Controls here
+
+}
+
+
+
+
+]]></Code>
+</File>

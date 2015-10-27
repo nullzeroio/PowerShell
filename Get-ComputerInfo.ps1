@@ -27,7 +27,7 @@
 	[+] Misc. syntax cleanup
 
 	#TAG:PUBLIC
-	
+
 	GitHub:	 https://github.com/vScripter
 	Twitter:  @vScripter
 	Email:	 kevin@vMotioned.com
@@ -59,15 +59,15 @@ param (
 )
 
 BEGIN {
-	
-	Set-StrictMode -Version Latest	
-	
+
+	Set-StrictMode -Version Latest
+
 } # end BEGIN block
 
 PROCESS {
-	
+
 	foreach ($computer in $ComputerName) {
-		
+
 		$objComputer = @()
 		$wmiWin32CompSys = $null
 		$wmiWin32OpSys = $null
@@ -82,19 +82,22 @@ PROCESS {
 		$ComputerShortName = $null
 		$ComputerIPv4 = $null
 		$UptimeData = $null
-		
+		$wmiWin32Proc = $null
+
 		if (Test-Connection $computer -Count 2 -Quiet) {
 			try {
 				Write-Verbose -Message "Working on $computer..."
-				
+
 				$wmiWin32CompSys = Get-WmiObject -Query "SELECT Name,Domain,Model FROM win32_computersystem" -ComputerName $computer
-				$wmiWin32OpSys = Get-WmiObject -Query "SELECT LastBootupTime,Description,Caption,ServicePackMajorVersion FROM Win32_operatingsystem" -ComputerName $computer
+				$wmiWin32OpSys = Get-WmiObject -Query "SELECT TotalVisibleMemorySize,LastBootupTime,Description,Caption,ServicePackMajorVersion FROM Win32_operatingsystem" -ComputerName $computer
 				$wmiWin32BIOS = Get-WmiObject -Query "SELECT Manufacturer,SerialNumber FROM win32_BIOS" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+				$wmiWin32Proc = Get-WmiObject -Query "SELECT Name FROM win32_Processor" -ComputerName $computer -ErrorAction 'SilentlyContinue' | Select-Object -First 1
 				$wmiWin32SysEncl = Get-WmiObject -Query "SELECT SMBIOSAssetTag FROM win32_SystemEnclosure" -ComputerName $computer -ErrorAction 'SilentlyContinue'
 				$wmiHPQiloVersion = Get-WmiObject -Query "SELECT Caption FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
 				$wmiHPQiloIPAddress = Get-WmiObject -Query "SELECT IPAddress FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
 				$wmiHPQiloHostname = Get-WmiObject -Query "SELECT HostName FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
 				$wmiHPQiloLicenseKey = Get-WmiObject -Query "SELECT LicenseKey FROM HP_ManagementProcessor" -Namespace "root\HPQ" -ComputerName $computer -ErrorAction 'SilentlyContinue'
+
 				$NBUVersionFilePath = Get-Content "\\$computer\c$\Program Files\veritas\netbackup\version.txt" -ErrorAction 'SilentlyContinue'
 				if ($NBUVersionFilePath) {
 					$NBUVersion = $NBUVersionFilePath | Out-String
@@ -102,10 +105,11 @@ PROCESS {
 				} else {
 					$NBUVersion = 'N/A'
 				} # end if/else $NBUVersionFilePath
+
 				$ComputerShortName = $wmiWin32CompSys.Name
 				$ComputerIPv4 = Get-WmiObject -Query "SELECT IPEnabled,IPAddress,IPSubnet,DefaultIPGateway,DNSServerSearchOrder FROM Win32_NetworkAdapterConfiguration" -ComputerName $computer | Where-Object { $_.IPEnabled -eq $true }
 				$UptimeData = (get-date) - $wmiWin32OpSys.converttodatetime($wmiWin32OpSys.lastbootuptime)
-				
+
 				$objComputer = [PSCustomObject] @{
 					ComputerName = $ComputerShortName.ToUpper()
 					Domain = $wmiWin32CompSys.Domain
@@ -116,6 +120,8 @@ PROCESS {
 					SecondaryDNS = $ComputerIPv4.DNSServerSearchOrder[1]
 					UptimeInDays = $UptimeData.Days
 					Model = $wmiWin32CompSys.Model
+					Processor = $wmiWin32Proc.Name
+					RAMVisibleInGB = ("{0:N2}" -f ($wmiWin32OpSys.TotalVisibleMemorySize/1024/1024))
 					Description = $wmiWin32OpSys.Description
 					OperatingSystem = $wmiWin32OpSys.Caption
 					ServicePack = $wmiWin32OpSys.ServicePackMajorVersion
@@ -130,13 +136,13 @@ PROCESS {
 					Ping = 'Up'
 					Error = $null
 				} # end $ObjComptuer
-				
+
 				$objComputer
 			} # end try
-			
+
 			catch {
 				Write-Warning -Message "Error querying WMI on $computer : $_"
-				
+
 				$objComputer = [PSCustomObject] @{
 					ComputerName = $computer
 					Domain = $null
@@ -147,6 +153,8 @@ PROCESS {
 					SecondaryDNS = $null
 					UptimeInDays = $null
 					Model = $null
+					Processor = $null
+					RAMVisibleInGB = $null
 					Description = $null
 					OperatingSystem = $null
 					ServicePack = $null
@@ -161,12 +169,12 @@ PROCESS {
 					Ping = 'Up'
 					Error = "Error querying WMI : $_"
 				} # end $ObjComptuer
-				
+
 				$objComputer
 			} # end catch
 		} else {
 			Write-Warning -Message "$computer is unreachable"
-			
+
 			$objComputer = [PSCustomObject] @{
 				ComputerName = $computer
 				Domain = $null
@@ -177,6 +185,8 @@ PROCESS {
 				SecondaryDNS = $null
 				UptimeInDays = $null
 				Model = $null
+				Processor = $null
+				RAMVisibleInGB = $null
 				Description = $null
 				OperatingSystem = $null
 				ServicePack = $null
@@ -191,13 +201,13 @@ PROCESS {
 				Ping = 'Down'
 				Error = 'Unreachable by ICMP (ping)'
 			} # end $ObjComptuer
-			
-			$objComputer			
+
+			$objComputer
 		} # end else
 	} # end foreach
-	
+
 } # end PROCESS
 
 END {
-	
+
 } # end END
