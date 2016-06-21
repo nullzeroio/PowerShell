@@ -1,7 +1,7 @@
 [System.Security.Cryptography.RandomNumberGenerator]$rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::Create()
 
 function Get-SecureRandom {
-
+	
 <#
 	.SYNOPSIS
 		Gets a cryptographically secure random number.
@@ -30,7 +30,7 @@ function Get-SecureRandom {
 		Last Update Notes:
 		- Created
 #>
-
+	
 	[CmdletBinding()]
 	param (
 		[Parameter(Position = 0, Mandatory = $false)]
@@ -39,36 +39,36 @@ function Get-SecureRandom {
 		[Parameter(Position = 1, Mandatory = $false)]
 		[System.Int32]$Minimum = 0
 	)
-
+	
 	PROCESS {
-
+		
 		if ($Maximum -le $Minimum) {
-
+			
 			Throw New-Object System.ArgumentException "The Minimum value ({$Minimum}) cannot be greater than or equal to the Maximum value ({$Maximum})."
-
+			
 		} # end if
-
-		[System.UInt32]$delta = $Maximum - $Minimum + 1
-		[System.UInt32]$upper = $delta * [System.Math]::Floor([System.UInt32]::MaxValue / $delta)
+		
+		[System.UInt64]$delta = $Maximum - $Minimum + 1
+		[System.UInt64]$upper = $delta * [System.Math]::Floor(([System.UInt32]::MaxValue + 1) / $delta)
 		$bytes = New-Object Byte[] 4
 		[System.UInt32]$value = 0
-
+		
 		do { # this loop avoids a bias when the range of values doesn't cleanly divide 2<<32
-
+			
 			$script:rng.GetBytes($bytes)
 			$value = [System.BitConverter]::ToUInt32($bytes, 0)
-
+			
 		} while ($value -gt $upper) # end do while loop
-
+		
 		return [System.Int32](($value % $delta) + $Minimum)
-
+		
 	} # end PROCESS block
-
+	
 } # end function Get-SecureRandom
 
 
 function Invoke-DiceRoll {
-
+	
 <#
 	.SYNOPSIS
 		Simulates a dice roll and returns a number based on the result of rolling the desired number of dice.
@@ -96,53 +96,53 @@ function Invoke-DiceRoll {
 		Last Update Notes:
 		- Uses a cryptographic RNG instead of Get-Random
 #>
-
+	
 	[CmdletBinding()]
 	param (
 		[Parameter(Position = 0, Mandatory = $false)]
 		[ValidateRange(1, 8)]
 		[System.Int32]$DiceCount = 5
 	)
-
+	
 	BEGIN {
-
+		
 		#Requires -Version 3
-
+		
 	} # end BEGIN block
-
+	
 	PROCESS {
-
+		
 		$i = 0
-
+		
 		Write-Verbose -Message "[Invoke-DiceRoll] Rolling dice; generating a {$DiceCount} digit random number."
 		try {
-
+			
 			$numberResult = $null
-
+			
 			for (; $i -lt $DiceCount; $i++) {
-
+				
 				$number = $null
 				$number = "$(Get-SecureRandom -Minimum 1 -Maximum 6)"
 				$numberResult += $number
-
+				
 			} # end for loop
-
+			
 			$numberResult
-
+			
 		} catch {
-
+			
 			Write-Warning -Message "[Invoke-DiceRoll][ERROR]Error generating random number. $_ "
-
+			
 		} # end try/catch
-
+		
 	} # end PROCESS block
-
+	
 	END {
-
+		
 		Write-Verbose -Message "[Invoke-DiceRoll] Processing Complete"
-
+		
 	} # end END block
-
+	
 } # end function Invoke-DiceRoll
 
 
