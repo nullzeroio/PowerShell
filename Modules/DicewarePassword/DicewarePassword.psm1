@@ -1,4 +1,72 @@
-﻿
+[System.Security.Cryptography.RandomNumberGenerator]$rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::Create()
+
+function Get-SecureRandom {
+	
+<#
+	.SYNOPSIS
+		Gets a cryptographically secure random number.
+	.DESCRIPTION
+		The Get-SecureRandom cmdlet gets a randomly selected number using System.Security.Cryptography.RNGCryptoServiceProvider.
+		
+		Get-SecureRandom behaves similarly Get-Random, except that it doesn't accept a user-provided seed, choose items from a list, or produce anything other than 32-bit integers.
+	.PARAMETER  Maximum
+		The maximum value for the generated random number. This must be stricty greater than Minimum.
+	.PARAMETER  Minimum
+		The minimum value for the generated random number. This must be strictly less than Maximum.
+	.EXAMPLE
+		Get-SecureRandom -Maximum 100 -Minimum 1
+		99
+	.EXAMPLE
+		Get-SecureRandom
+		642640509
+	.OUTPUTS
+		System.Int32
+	.NOTES
+		Author: Alex Godofsky
+		Contact: https://github.com/AlexGodofsky
+		Version: 1.0
+		Last Updated: 20160621
+		Last Updated By: Alex Godofsky
+		Last Update Notes:
+		- Created
+#>
+	
+	[CmdletBinding()]
+	param (
+		[Parameter(Position = 0, Mandatory = $false)]
+		[System.Int32]$Maximum = [System.Int32]::MaxValue,
+		
+		[Parameter(Position = 1, Mandatory = $false)]
+		[System.Int32]$Minimum = 0
+	)
+	
+	PROCESS {
+		
+		if ($Maximum -le $Minimum) {
+			
+			Throw New-Object System.ArgumentException "The Minimum value ({$Minimum}) cannot be greater than or equal to the Maximum value ({$Maximum})."
+			
+		} # end if
+		
+		[System.UInt64]$delta = $Maximum - $Minimum + 1
+		[System.UInt64]$upper = $delta * [System.Math]::Floor(([System.UInt32]::MaxValue + 1) / $delta)
+		$bytes = New-Object Byte[] 4
+		[System.UInt32]$value = 0
+		
+		do { # this loop avoids a bias when the range of values doesn't cleanly divide 2<<32
+			
+			$script:rng.GetBytes($bytes)
+			$value = [System.BitConverter]::ToUInt32($bytes, 0)
+			
+		} while ($value -gt $upper) # end do while loop
+		
+		return [System.Int32](($value % $delta) + $Minimum)
+		
+	} # end PROCESS block
+	
+} # end function Get-SecureRandom
+
+
 function Invoke-DiceRoll {
 	
 <#
@@ -6,13 +74,12 @@ function Invoke-DiceRoll {
 		Simulates a dice roll and returns a number based on the result of rolling the desired number of dice.
 	.DESCRIPTION
 		Simulates a dice roll and returns a number based on the result of rolling the desired number of dice.
-	
 		The default dice count is 5, which was driven by the Diceware Passphrase minimum word length recommendation. See the help for the 'New-DicewarePassword' cmdlet/function for more information.
 	.PARAMETER  DiceCount
 		The number of dice to roll
 	.EXAMPLE
 		Invoke-DiceRoll -DiceCount 8
-		51334144		
+		51334144
 	.EXAMPLE
 		Invoke-DiceRoll
 		31544
@@ -22,12 +89,12 @@ function Invoke-DiceRoll {
 		System.String
 	.NOTES
 		Author: Kevin Kirkpatrick
-		Contact: https://github.com/vScripter 
-		Version: 1.0
-		Last Updated: 20151027
-		Last Updated By: K. Kirkpatrick
+		Contact: https://github.com/vScripter
+		Version: 1.1
+		Last Updated: 20160621
+		Last Updated By: Alex Godofsky
 		Last Update Notes:
-		- Created
+		- Uses a cryptographic RNG instead of Get-Random
 #>
 	
 	[CmdletBinding()]
@@ -39,7 +106,7 @@ function Invoke-DiceRoll {
 	
 	BEGIN {
 		
-		#Requires -Version 3		
+		#Requires -Version 3
 		
 	} # end BEGIN block
 	
@@ -55,7 +122,7 @@ function Invoke-DiceRoll {
 			for (; $i -lt $DiceCount; $i++) {
 				
 				$number = $null
-				$number = "$(Get-Random -Minimum 1 -Maximum 6)"
+				$number = "$(Get-SecureRandom -Minimum 1 -Maximum 6)"
 				$numberResult += $number
 				
 			} # end for loop
@@ -66,7 +133,7 @@ function Invoke-DiceRoll {
 			
 			Write-Warning -Message "[Invoke-DiceRoll][ERROR]Error generating random number. $_ "
 			
-		} # end try/catch		
+		} # end try/catch
 		
 	} # end PROCESS block
 	
